@@ -1,0 +1,472 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooler для рантайма
+  directUrl = env("DIRECT_URL")     // direct для миграций
+}
+
+
+enum UserRole {
+  ADMIN
+  CLIENT
+  FREELANCER
+}
+
+enum OrderStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DealState {
+  CREATED
+  STARTED
+  SUBMITTED
+  REVISION_REQUESTED
+  ACCEPTED
+  DISPUTED
+  RESOLVED
+  CANCELLED
+}
+
+enum FavoriteKind {
+  ORDER
+  TASK
+  DEAL
+}
+
+enum DisputeState {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum WithdrawalType {
+  STANDARD
+  INSTANT
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentMethodType {
+  CARD
+  CRYPTO_TON
+  CRYPTO_USDT
+  CRYPTO_BTC
+}
+
+enum NotificationType {
+  NEW_ORDER
+  NEW_PROPOSAL
+  NEW_MESSAGE
+  PORTFOLIO_VIEW
+  PROPOSAL_ACCEPTED
+  PROPOSAL_REJECTED
+  COMPLAINT
+  SYSTEM
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(CLIENT)
+  googleId     String?  @unique
+  proposalLimitUsed Int @default(0)
+  proposalLimitMax  Int @default(100)
+  proposalBlockedUntil DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile              Profile?
+  clientOrders         Order[]              @relation("ClientOrders")
+  clientTasks          Task[]               @relation("ClientTasks")
+  proposals            Proposal[]
+  clientDeals          Deal[]               @relation("ClientDeals")
+  freelancerDeals      Deal[]               @relation("FreelancerDeals")
+  threadParticipants   ThreadParticipant[]
+  sentMessages         Message[]
+  reviewsGiven         Review[]             @relation("ReviewsGiven")
+  reviewsReceived      Review[]             @relation("ReviewsReceived")
+  favorites            Favorite[]
+  walletBalances       WalletBalance[]
+  notifications        Notification[]
+  openedDisputes       Dispute[]            @relation("DisputeOpener")
+  paymentMethods       PaymentMethod[]
+  withdrawals          Withdrawal[]
+  portfolioItems       PortfolioItem[]
+  mediaLibraryItems    MediaLibraryItem[]
+  notificationSettings NotificationSettings?
+  complaints           Complaint[]          @relation("ComplaintAuthor")
+  complaintsReceived   Complaint[]          @relation("ComplaintTarget")
+
+  @@index([email])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  slug        String   @unique
+  name        String
+  bio         String?
+  skills      String[]
+  avatarUrl   String?
+  location    String?
+  ratingAvg   Float    @default(0)
+  ratingCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([userId])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  clientId    String
+  title       String
+  description String
+  budgetMin   Float?
+  budgetMax   Float?
+  currency    String      @default("USD")
+  tags        String[]
+  status      OrderStatus @default(OPEN)
+  isBoosted   Boolean     @default(false)
+  boostCommissionRate Float @default(0.10)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  client    User       @relation("ClientOrders", fields: [clientId], references: [id], onDelete: Cascade)
+  proposals Proposal[]
+  deals     Deal[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([isBoosted])
+  @@index([createdAt])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  clientId    String
+  title       String
+  description String
+  price       Float
+  currency    String     @default("USD")
+  tags        String[]
+  status      TaskStatus @default(OPEN)
+  isBoosted   Boolean    @default(false)
+  boostCommissionRate Float @default(0.10)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  client    User       @relation("ClientTasks", fields: [clientId], references: [id], onDelete: Cascade)
+  proposals Proposal[]
+  deals     Deal[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([isBoosted])
+  @@index([createdAt])
+}
+
+model Proposal {
+  id           String         @id @default(cuid())
+  orderId      String?
+  taskId       String?
+  freelancerId String
+  price        Float
+  days         Int
+  message      String
+  status       ProposalStatus @default(PENDING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  order      Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  task       Task?  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  freelancer User   @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+  complaints Complaint[]
+
+  @@index([orderId])
+  @@index([taskId])
+  @@index([freelancerId])
+  @@index([status])
+}
+
+model Deal {
+  id           String    @id @default(cuid())
+  orderId      String?
+  taskId       String?
+  clientId     String
+  freelancerId String
+  amount       Float
+  currency     String    @default("USD")
+  state        DealState @default(CREATED)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  order      Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  task       Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  client     User      @relation("ClientDeals", fields: [clientId], references: [id], onDelete: Cascade)
+  freelancer User      @relation("FreelancerDeals", fields: [freelancerId], references: [id], onDelete: Cascade)
+  reviews    Review[]
+  disputes   Dispute[]
+
+  @@index([clientId])
+  @@index([freelancerId])
+  @@index([state])
+  @@index([createdAt])
+}
+
+model Thread {
+  id        String   @id @default(cuid())
+  orderId   String?
+  taskId    String?
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ThreadParticipant[]
+  messages     Message[]
+
+  @@index([orderId])
+  @@index([taskId])
+}
+
+model ThreadParticipant {
+  id       String @id @default(cuid())
+  threadId String
+  userId   String
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  threadId    String
+  senderId    String
+  text        String
+  attachments String[]
+  createdAt   DateTime @default(now())
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  dealId     String
+  fromUserId String
+  toUserId   String
+  rating     Int
+  text       String?
+  createdAt  DateTime @default(now())
+
+  deal     Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fromUser User @relation("ReviewsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ReviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, fromUserId])
+  @@index([dealId])
+  @@index([toUserId])
+}
+
+model Favorite {
+  id        String       @id @default(cuid())
+  userId    String
+  kind      FavoriteKind
+  refId     String
+  createdAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, refId])
+  @@index([userId])
+  @@index([kind, refId])
+}
+
+model WalletBalance {
+  id        String   @id @default(cuid())
+  userId    String
+  currency  String   @default("USD")
+  available Float    @default(0)
+  hold      Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currency])
+  @@index([userId])
+}
+
+model PaymentMethod {
+  id        String            @id @default(cuid())
+  userId    String
+  type      PaymentMethodType
+  label     String
+  details   Json
+  isDefault Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  userId          String
+  amount          Float
+  currency        String
+  type            WithdrawalType
+  status          WithdrawalStatus @default(PENDING)
+  fee             Float            @default(0)
+  paymentMethodId String?
+  processedAt     DateTime?
+  createdAt       DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  userId      String
+  category    String
+  title       String
+  description String?
+  imageUrl    String?
+  externalUrl String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+}
+
+model MediaLibraryItem {
+  id        String   @id @default(cuid())
+  userId    String
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  category  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([readAt])
+}
+
+model NotificationSettings {
+  id                   String  @id @default(cuid())
+  userId               String  @unique
+  enableNewOrder       Boolean @default(true)
+  enableNewProposal    Boolean @default(true)
+  enableNewMessage     Boolean @default(true)
+  enablePortfolioView  Boolean @default(true)
+  enableProposalStatus Boolean @default(true)
+  enableComplaint      Boolean @default(true)
+  enableSystem         Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Complaint {
+  id         String   @id @default(cuid())
+  authorId   String
+  targetId   String
+  proposalId String?
+  reason     String
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  author   User      @relation("ComplaintAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target   User      @relation("ComplaintTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  proposal Proposal? @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+
+  @@index([authorId])
+  @@index([targetId])
+  @@index([proposalId])
+  @@index([resolved])
+}
+
+model Dispute {
+  id         String       @id @default(cuid())
+  dealId     String
+  openedById String
+  reason     String
+  state      DisputeState @default(OPEN)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  deal     Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  openedBy User @relation("DisputeOpener", fields: [openedById], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([openedById])
+  @@index([state])
+}
