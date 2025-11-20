@@ -223,7 +223,7 @@ function AppContent() {
   const isAdminLoginPage = route === '/admin/login';
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {!isAuthPage && !isAdminPage && <NavBar />}
       <BanCheck>
         <AnimatePresence mode="wait">
