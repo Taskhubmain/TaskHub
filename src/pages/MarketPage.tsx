@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { BoostBadge } from '@/components/ui/BoostBadge';
 import { ProposalLimitIndicator } from '@/components/ui/ProposalLimitIndicator';
+import BuyProposalsDialog from '@/components/BuyProposalsDialog';
 import PriceDisplay from '@/components/PriceDisplay';
 import ProfileBadges from '@/components/ui/ProfileBadges';
 import StarRating from '@/components/ui/StarRating';
@@ -51,10 +52,6 @@ export default function MarketPage() {
   const [proposalLimitData, setProposalLimitData] = useState<{ used: number; monthStart: string; purchased: number } | null>(null);
   const [limitExceededDialogOpen, setLimitExceededDialogOpen] = useState(false);
   const [buyProposalsDialogOpen, setBuyProposalsDialogOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<{ amount: number; price: number } | null>(null);
-  const [purchasing, setPurchasing] = useState(false);
-  const [userBalance, setUserBalance] = useState<number>(0);
-  const [userCurrency, setUserCurrency] = useState<string>('USD');
 
   useEffect(() => {
     loadData();
@@ -63,7 +60,7 @@ export default function MarketPage() {
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const categoryParam = params.get('category');
     if (categoryParam) {
-      setCategory(categoryParam);
+      setSelectedCategories([categoryParam]);
     }
 
     const handleVisibilityChange = () => {
@@ -93,32 +90,33 @@ export default function MarketPage() {
     try {
       const { data, error } = await getSupabase()
         .from('profiles')
-        .select('proposals_used_this_month, proposals_month_start, purchased_proposals, balance, currency')
+        .select('proposals_used_this_month, proposals_month_start, purchased_proposals')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error loading proposal limits:', error);
+        return;
+      }
+
+      if (data) {
         const monthStart = new Date(data.proposals_month_start || new Date());
         const currentMonthStart = new Date();
         currentMonthStart.setDate(1);
         currentMonthStart.setHours(0, 0, 0, 0);
 
-        setUserBalance(parseFloat(data.balance) || 0);
-        setUserCurrency(data.currency || 'USD');
+        const limitData = monthStart < currentMonthStart ? {
+          used: 0,
+          monthStart: currentMonthStart.toISOString(),
+          purchased: data.purchased_proposals || 0
+        } : {
+          used: data.proposals_used_this_month || 0,
+          monthStart: data.proposals_month_start,
+          purchased: data.purchased_proposals || 0
+        };
 
-        if (monthStart < currentMonthStart) {
-          setProposalLimitData({
-            used: 0,
-            monthStart: currentMonthStart.toISOString(),
-            purchased: data.purchased_proposals || 0
-          });
-        } else {
-          setProposalLimitData({
-            used: data.proposals_used_this_month || 0,
-            monthStart: data.proposals_month_start,
-            purchased: data.purchased_proposals || 0
-          });
-        }
+        console.log('Proposal limits loaded:', limitData);
+        setProposalLimitData(limitData);
       }
     } catch (error) {
       console.error('Error loading proposal limits:', error);
@@ -347,49 +345,6 @@ export default function MarketPage() {
     window.location.hash = `/proposals/create?type=${previewType}&id=${previewItem.id}`;
   };
 
-  const proposalPackages = [
-    { amount: 25, price: 25 },
-    { amount: 50, price: 45 },
-    { amount: 100, price: 80 },
-    { amount: 150, price: 110 },
-    { amount: 250, price: 175 }
-  ];
-
-  const handlePurchaseProposals = async () => {
-    if (!user || !selectedPackage) return;
-
-    setPurchasing(true);
-    try {
-      if (userBalance < selectedPackage.price) {
-        alert('Недостаточно средств на балансе');
-        return;
-      }
-
-      const newBalance = userBalance - selectedPackage.price;
-      const newPurchased = (proposalLimitData?.purchased || 0) + selectedPackage.amount;
-
-      const { error } = await getSupabase()
-        .from('profiles')
-        .update({
-          balance: newBalance,
-          purchased_proposals: newPurchased,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      alert(`Успешно куплено ${selectedPackage.amount} откликов!`);
-      setBuyProposalsDialogOpen(false);
-      setSelectedPackage(null);
-      await loadProposalLimits();
-    } catch (error) {
-      console.error('Error purchasing proposals:', error);
-      alert('Ошибка при покупке откликов');
-    } finally {
-      setPurchasing(false);
-    }
-  };
 
   return (
     <AnimatePresence mode="wait">
@@ -434,12 +389,12 @@ export default function MarketPage() {
             </div>
           </div>
 
-          {user && proposalLimitData && (
+          {user && (
             <div className="mb-6">
               <ProposalLimitIndicator
-                used={proposalLimitData.used}
+                used={proposalLimitData?.used || 0}
                 max={90}
-                purchased={proposalLimitData.purchased}
+                purchased={proposalLimitData?.purchased || 0}
                 type={activeTab as 'orders' | 'tasks'}
                 onBuyMore={() => setBuyProposalsDialogOpen(true)}
               />
@@ -807,90 +762,11 @@ export default function MarketPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={buyProposalsDialogOpen} onOpenChange={setBuyProposalsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Купить дополнительные отклики</DialogTitle>
-              <DialogDescription>
-                Ваш баланс: ${userBalance.toFixed(2)} {userCurrency}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-              {proposalPackages.map((pkg) => {
-                const canAfford = userBalance >= pkg.price;
-                const pricePerProposal = (pkg.price / pkg.amount).toFixed(2);
-
-                return (
-                  <div
-                    key={pkg.amount}
-                    onClick={() => canAfford && setSelectedPackage(pkg)}
-                    className={`relative border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                      selectedPackage?.amount === pkg.amount
-                        ? 'border-[#3F7F6E] bg-[#EFFFF8]'
-                        : canAfford
-                        ? 'border-gray-200 hover:border-[#3F7F6E] hover:bg-[#EFFFF8]'
-                        : 'border-gray-200 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    {pkg.amount === 100 && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#6FE7C8] text-white text-xs font-bold px-3 py-1 rounded-full">
-                        ПОПУЛЯРНЫЙ
-                      </div>
-                    )}
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-[#3F7F6E] mb-2">
-                        {pkg.amount}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-4">откликов</div>
-                      <div className="text-3xl font-bold mb-2">
-                        ${pkg.price}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ${pricePerProposal} за отклик
-                      </div>
-                      {!canAfford && (
-                        <div className="mt-3 text-xs text-red-600 font-medium">
-                          Недостаточно средств
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setBuyProposalsDialogOpen(false);
-                  setSelectedPackage(null);
-                }}
-                disabled={purchasing}
-              >
-                Отмена
-              </Button>
-              <Button
-                onClick={handlePurchaseProposals}
-                disabled={!selectedPackage || purchasing}
-                className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
-              >
-                {purchasing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Обработка...
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Купить {selectedPackage?.amount || 0} откликов
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <BuyProposalsDialog
+          open={buyProposalsDialogOpen}
+          onClose={() => setBuyProposalsDialogOpen(false)}
+          onSuccess={loadProposalLimits}
+        />
       </motion.div>
     </AnimatePresence>
   );

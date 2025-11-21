@@ -47,9 +47,9 @@ function SubcategoryCarousel({ subcategories, selectedCategories, onToggle }: Su
       const gap = 12;
       const containerWidth = scrollRef.current.clientWidth;
       const isMobile = containerWidth < 768;
-      const itemsPerView = isMobile ? 3 : 8;
+      const itemsPerView = isMobile ? 3 : 4;
       const itemWidth = Math.floor((containerWidth - gap * (itemsPerView - 1)) / itemsPerView);
-      const scrollItems = isMobile ? 3 : 6;
+      const scrollItems = isMobile ? 3 : 4;
       const scrollAmount = itemWidth * scrollItems + gap * scrollItems;
 
       const currentScroll = scrollRef.current.scrollLeft;
@@ -96,7 +96,7 @@ function SubcategoryCarousel({ subcategories, selectedCategories, onToggle }: Su
             <div
               key={sub.slug}
               onClick={() => onToggle(sub.name)}
-              className="flex-shrink-0 snap-start cursor-pointer w-[calc((100%-24px)/3)] md:w-[calc((100%-84px)/8)]"
+              className="flex-shrink-0 snap-start cursor-pointer w-[calc((100%-24px)/3)] md:w-[calc((100%-36px)/4)]"
             >
               <div className={`rounded-xl overflow-hidden border-2 transition-all duration-300 h-full ${
                 isSelected ? 'border-[#3F7F6E] shadow-lg' : 'border-gray-200 hover:border-[#3F7F6E] hover:shadow-md'

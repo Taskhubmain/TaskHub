@@ -807,7 +807,7 @@ export default function MessagesPage() {
       setMessages((prev) => prev.map(m => m.id === tempId ? insertedMessage : m));
       shouldScrollRef.current = false;
 
-      if (messageText.trim()) {
+      if (messageText.trim() && aiAgentEnabled) {
         analyzeMessage(selectedChatId, messageText, user.id).catch(err =>
           console.error('AI analysis error:', err)
         );
@@ -1566,15 +1566,17 @@ export default function MessagesPage() {
 
                 {/* Floating Action Buttons */}
                 <div className="absolute left-4 top-20 flex flex-col gap-2 z-20">
-                  {/* CRM Button */}
-                  <button
-                    ref={crmButtonRef}
-                    onClick={() => setCrmPanelOpen(true)}
-                    className="w-12 h-12 rounded-full bg-[#3F7F6E] hover:bg-[#2d5f52] text-white flex items-center justify-center text-xs font-semibold transition shadow-lg"
-                    title="CRM Чата"
-                  >
-                    CRM
-                  </button>
+                  {/* CRM Button - только для чатов со сделками */}
+                  {currentDeal && (
+                    <button
+                      ref={crmButtonRef}
+                      onClick={() => setCrmPanelOpen(true)}
+                      className="w-12 h-12 rounded-full bg-[#3F7F6E] hover:bg-[#2d5f52] text-white flex items-center justify-center text-xs font-semibold transition shadow-lg"
+                      title="CRM Сделки"
+                    >
+                      CRM
+                    </button>
+                  )}
 
                   {/* Floating Translation Button */}
                   <button

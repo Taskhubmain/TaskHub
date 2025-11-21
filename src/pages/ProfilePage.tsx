@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Eye, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
+import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Eye, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart } from 'lucide-react';
 import { MediaEditor } from '@/components/MediaEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ProposalLimitIndicator } from '@/components/ui/ProposalLimitIndicator';
+import SubscriptionPurchaseDialog from '@/components/SubscriptionPurchaseDialog';
 import { getSupabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,6 +57,8 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [proposalLimitData, setProposalLimitData] = useState<{ used: number; monthStart: string; purchased: number } | null>(null);
+  const [buyProposalsDialogOpen, setBuyProposalsDialogOpen] = useState(false);
   const [profile, setProfile] = useState(() => {
     const raw = typeof window !== 'undefined' && localStorage.getItem('fh_profile');
     return raw ? JSON.parse(raw) : {
@@ -107,10 +111,49 @@ export default function ProfilePage() {
         loadUserProfile(),
         loadStatistics(),
         checkAuthProvider(),
+        loadProposalLimits(),
       ]);
       await loadTabData();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProposalLimits = async () => {
+    if (!user) {
+      setProposalLimitData(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('proposals_used_this_month, proposals_month_start, purchased_proposals')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        const monthStart = new Date(data.proposals_month_start || new Date());
+        const currentMonthStart = new Date();
+        currentMonthStart.setDate(1);
+        currentMonthStart.setHours(0, 0, 0, 0);
+
+        if (monthStart < currentMonthStart) {
+          setProposalLimitData({
+            used: 0,
+            monthStart: currentMonthStart.toISOString(),
+            purchased: data.purchased_proposals || 0
+          });
+        } else {
+          setProposalLimitData({
+            used: data.proposals_used_this_month || 0,
+            monthStart: data.proposals_month_start,
+            purchased: data.purchased_proposals || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading proposal limits:', error);
     }
   };
 
@@ -806,6 +849,18 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {proposalLimitData && (
+                <div className="hidden lg:block">
+                  <ProposalLimitIndicator
+                    used={proposalLimitData.used}
+                    max={50}
+                    purchased={proposalLimitData.purchased}
+                    type="orders"
+                    onBuyMore={() => setBuyProposalsDialogOpen(true)}
+                  />
+                </div>
+              )}
 
               <Card className="bg-gradient-to-br from-[#EFFFF8] to-white border-[#6FE7C8]/30 hidden lg:block">
                 <CardContent className="p-6 grid gap-4">
@@ -1848,6 +1903,12 @@ export default function ProfilePage() {
       {showMediaEditor && fileToEdit && (
         <MediaEditor file={fileToEdit} onSave={handleMediaSave} onCancel={handleMediaCancel} />
       )}
+
+      <SubscriptionPurchaseDialog
+        isOpen={buyProposalsDialogOpen}
+        onClose={() => setBuyProposalsDialogOpen(false)}
+        onSuccess={loadProposalLimits}
+      />
     </div>
   );
 }

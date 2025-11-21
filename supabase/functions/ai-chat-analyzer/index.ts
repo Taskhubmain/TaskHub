@@ -76,9 +76,12 @@ async function analyzeWithAI(messageText: string, existingContext: any): Promise
 1. Прошлые даты запрещены! Только будущие даты.
 2. Добавь уровень уверенности (confidence) для каждого извлеченного параметра от 0.0 до 1.0:
    - 1.0 = абсолютно уверен (точная цифра, явная дата)
-   - 0.7-0.9 = уверен (понятный контекст)
-   - 0.4-0.6 = средняя уверенность (неоднозначность)
-   - 0.0-0.3 = низкая уверенность (догадка)
+   - 0.8-0.9 = очень уверен (понятный контекст, конкретика)
+   - 0.7 = уверен (можно понять из контекста)
+   - 0.5-0.6 = средняя уверенность (некоторая неоднозначность)
+   - 0.0-0.4 = низкая уверенность (неясно, догадка)
+3. БУДЬ БОЛЕЕ УВЕРЕННЫМ: если информация очевидна из контекста - ставь confidence 0.8-0.9
+4. Если цифра или дата упомянуты явно - ставь confidence 1.0
 
 Проанализируй сообщение и извлеки в JSON формате:
 {
@@ -108,9 +111,13 @@ async function analyzeWithAI(messageText: string, existingContext: any): Promise
 
 Примеры:
 - "Цена 500 долларов" → confidence: 1.0 (точная цифра)
+- "Сделаем за 500$" → confidence: 1.0 (точная цифра)
 - "Дорого будет" → confidence: 0.3 (неопределенно)
-- "К пятнице сделаем" → confidence: 0.9 (явная дата)
+- "К пятнице сделаем" → confidence: 0.9 (конкретная дата)
+- "Нужен лендинг" → confidence: 0.9 (конкретный проект)
+- "Разработка сайта" → confidence: 0.9 (понятный проект)
 - "Скоро нужно" → confidence: 0.4 (неясный срок)
+- "Нужно срочно" → confidence: 0.8 (высокий приоритет очевиден)
 
 Ответ только JSON, без комментариев:`;
 
@@ -252,7 +259,7 @@ Deno.serve(async (req: Request) => {
 
     const updates: Partial<CRMContext> = {};
     const confirmationsNeeded: string[] = [];
-    const CONFIDENCE_THRESHOLD = 1.0;
+    const CONFIDENCE_THRESHOLD = 0.7;
 
     if (analysis.order_title && analysis.order_title.value) {
       const newTitle = analysis.order_title.value.slice(0, 100);
