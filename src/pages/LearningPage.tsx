@@ -6,14 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSupabase } from '@/lib/supabaseClient';
 import { queryWithRetry } from '@/lib/supabase-utils';
+import { useWeglot } from '@/hooks/useWeglot';
+import { lessons } from '@/data/learningLessons';
 
-interface Lesson {
-  id: number;
-  title: string;
-  content: string;
-}
+// Lessons moved to src/data/learningLessons.ts
+// Old lessons array removed - using imported version with translations
 
-const lessons: Lesson[] = [
+const oldLessons = [
   {
     id: 1,
     title: 'Старт для фрилансеров',
@@ -587,7 +586,7 @@ const lessons: Lesson[] = [
 Главная мысль:
 Постоянные клиенты — это не случайность. Это результат того, как ты работаешь, общаешься, держишь сроки и смотришь на задачи. Выстраивай с людьми нормальные рабочие отношения — и они сами будут возвращаться.`
   }
-];
+]; // Old lessons - removed, now using imported version with translations
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -599,6 +598,7 @@ const pageTransition = { type: 'spring' as const, stiffness: 140, damping: 20, m
 
 export default function LearningPage() {
   const { user } = useAuth();
+  const { currentLang } = useWeglot();
   const [currentLessonId, setCurrentLessonId] = useState(1);
   const [completedLessons, setCompletedLessons] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -629,6 +629,11 @@ export default function LearningPage() {
 
   const currentLesson = lessons.find(l => l.id === currentLessonId) || lessons[0];
   const currentIndex = lessons.findIndex(l => l.id === currentLessonId);
+
+  // Get current language, fallback to 'ru' if not 'en'
+  const lang = currentLang === 'en' ? 'en' : 'ru';
+  const lessonTitle = currentLesson.title[lang];
+  const lessonContent = currentLesson.content[lang];
 
   const goToLesson = async (lessonId: number) => {
     if (!completedLessons.includes(lessonId)) {
@@ -693,12 +698,13 @@ export default function LearningPage() {
       exit="out"
       variants={pageVariants}
       transition={pageTransition}
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-background wg-notranslate"
+      data-wg-notranslate
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Обучение</h1>
-          <p className="text-muted-foreground">Пройди уроки и стань успешным фрилансером</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{lang === 'en' ? 'Learning' : 'Обучение'}</h1>
+          <p className="text-muted-foreground">{lang === 'en' ? 'Complete the lessons and become a successful freelancer' : 'Пройди уроки и стань успешным фрилансером'}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -707,7 +713,7 @@ export default function LearningPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b">
                   <BookOpen className="h-5 w-5 text-[#3F7F6E]" />
-                  <h2 className="font-semibold">Уроки</h2>
+                  <h2 className="font-semibold">{lang === 'en' ? 'Lessons' : 'Уроки'}</h2>
                 </div>
                 <div className="space-y-1">
                   {lessons.map((lesson) => {
@@ -735,13 +741,13 @@ export default function LearningPage() {
                         }`}>
                           {isCompleted ? <Check className="h-4 w-4" /> : lesson.id}
                         </div>
-                        <span className="text-sm flex-1 line-clamp-2">{lesson.title}</span>
+                        <span className="text-sm flex-1 line-clamp-2">{lesson.title[lang]}</span>
                       </button>
                     );
                   })}
                 </div>
                 <div className="mt-4 pt-3 border-t text-sm text-muted-foreground">
-                  Пройдено: {completedLessons.length} из {lessons.length}
+                  {lang === 'en' ? `Completed: ${completedLessons.length} of ${lessons.length}` : `Пройдено: ${completedLessons.length} из ${lessons.length}`}
                 </div>
               </CardContent>
             </Card>
@@ -752,20 +758,23 @@ export default function LearningPage() {
               <CardContent className="p-8">
                 <div className="mb-6">
                   <div className="text-sm text-[#3F7F6E] font-medium mb-2">
-                    Урок {currentLesson.id} из {lessons.length}
+                    {lang === 'en' ? `Lesson ${currentLesson.id} of ${lessons.length}` : `Урок ${currentLesson.id} из ${lessons.length}`}
                   </div>
-                  <h2 className="text-2xl font-bold mb-4">{currentLesson.title}</h2>
+                  <h2 className="text-2xl font-bold mb-4">{lessonTitle}</h2>
                 </div>
 
                 <div className="space-y-5">
-                  {currentLesson.content.split('\n\n').map((paragraph, index) => {
+                  {lessonContent.split('\n\n').map((paragraph, index) => {
                     const text = paragraph.trim();
 
-                    if (text.startsWith('Главная мысль:')) {
+                    if (text.startsWith('Главная мысль:') || text.startsWith('Key takeaway:')) {
+                      const isRu = text.startsWith('Главная мысль:');
+                      const heading = isRu ? 'Главная мысль' : 'Key Takeaway';
+                      const content = text.replace(/^(Главная мысль:|Key takeaway:)/, '').trim();
                       return (
                         <div key={index} className="mt-8 p-6 bg-gradient-to-r from-[#EFFFF8] to-[#E0F9F0] rounded-xl border-l-4 border-[#3F7F6E]">
-                          <div className="font-bold text-[#3F7F6E] text-lg mb-2">Главная мысль</div>
-                          <p className="text-base leading-relaxed text-gray-800">{text.replace('Главная мысль:', '').trim()}</p>
+                          <div className="font-bold text-[#3F7F6E] text-lg mb-2">{heading}</div>
+                          <p className="text-base leading-relaxed text-gray-800">{content}</p>
                         </div>
                       );
                     }
@@ -787,7 +796,7 @@ export default function LearningPage() {
                       );
                     }
 
-                    if (text.includes('Примеры:') || text.includes('Пример:') || text.includes('Структура:') || text.includes('Правила:') || text.includes('Некоторые признаки:')) {
+                    if (text.includes('Примеры:') || text.includes('Пример:') || text.includes('Структура:') || text.includes('Правила:') || text.includes('Некоторые признаки:') || text.includes('Examples:') || text.includes('Example:') || text.includes('Structure:') || text.includes('Rules:')) {
                       return (
                         <div key={index} className="pl-4 border-l-2 border-[#6FE7C8]">
                           <p className="text-base leading-relaxed text-gray-700 whitespace-pre-line">{text}</p>
@@ -819,7 +828,7 @@ export default function LearningPage() {
                     className="gap-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Назад
+                    {lang === 'en' ? 'Back' : 'Назад'}
                   </Button>
 
                   <div className="text-sm text-muted-foreground">
@@ -832,14 +841,14 @@ export default function LearningPage() {
                       className="gap-2 bg-[#3F7F6E] hover:bg-[#2F6F5E]"
                     >
                       <Home className="h-4 w-4" />
-                      На главную
+                      {lang === 'en' ? 'Home' : 'На главную'}
                     </Button>
                   ) : (
                     <Button
                       onClick={goToNext}
                       className="gap-2 bg-[#3F7F6E] hover:bg-[#2F6F5E]"
                     >
-                      Далее
+                      {lang === 'en' ? 'Next' : 'Далее'}
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   )}

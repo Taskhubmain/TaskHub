@@ -1,0 +1,20 @@
+.wg-notranslate,
+[data-wg-notranslate],
+[data-no-translate] {
+  translate: no;
+}
+
+.user-content,
+.chat-message,
+.proposal-content,
+.order-description,
+.order-title,
+.task-description,
+.task-title,
+.review-text,
+.profile-bio,
+.profile-name,
+.user-message,
+.ugc-content {
+  translate: no;
+}

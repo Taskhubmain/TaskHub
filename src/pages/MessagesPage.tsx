@@ -1328,7 +1328,7 @@ export default function MessagesPage() {
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
-                                <div className="font-semibold truncate">{profile?.name || 'Пользователь'}</div>
+                                <div className="font-semibold truncate" data-wg-notranslate>{profile?.name || 'Пользователь'}</div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs text-[#3F7F6E]">
                                     {displayChat?.last_message_at
@@ -1364,7 +1364,7 @@ export default function MessagesPage() {
                               </div>
 
                               {!hasDeals && chat && (
-                                <div className="text-sm text-[#3F7F6E] truncate">
+                                <div className="text-sm text-[#3F7F6E] truncate" data-wg-notranslate>
                                   {chat.last_message_text || 'Нет сообщений'}
                                 </div>
                               )}
@@ -1627,7 +1627,7 @@ export default function MessagesPage() {
                           <div key={msg.id}>
                             <div className="flex justify-center my-4">
                               <div className="max-w-[80%] rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                                <div className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words">
+                                <div className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words" data-wg-notranslate>
                                   {msg.content || msg.text}
                                 </div>
                                 <div className="text-xs text-amber-700 text-center mt-2">
@@ -1674,7 +1674,7 @@ export default function MessagesPage() {
                                   <FileText className={`h-5 w-5 ${isOwn ? 'text-white' : 'text-[#3F7F6E]'}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${isOwn ? 'text-white' : 'text-gray-900'}`}>
+                                  <p className={`text-sm font-medium truncate ${isOwn ? 'text-white' : 'text-gray-900'}`} data-wg-notranslate>
                                     {msg.file_name || 'Файл'}
                                   </p>
                                   <p className={`text-xs ${isOwn ? 'text-white/70' : 'text-[#3F7F6E]'}`}>
@@ -1685,7 +1685,7 @@ export default function MessagesPage() {
                             )}
                             {(msg.content || msg.text) && (
                               <div className="p-3">
-                                <div className="text-sm whitespace-pre-wrap break-words">
+                                <div className="text-sm whitespace-pre-wrap break-words chat-message" data-wg-notranslate>
                                   {translateChat ? (translatedMessages[msg.id] || msg.content || msg.text) : (msg.content || msg.text)}
                                 </div>
                               </div>

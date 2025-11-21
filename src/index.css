@@ -63,6 +63,23 @@
     content-visibility: auto;
   }
 
+  /* Image optimization */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* Lazy loading smooth transition */
+  img[loading="lazy"] {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  img[loading="lazy"].loaded,
+  img[loading="lazy"]:not([src=""]) {
+    opacity: 1;
+  }
+
   /* GPU acceleration for animations */
   .animate-spin,
   [class*="animate-"] {
@@ -159,4 +176,21 @@ html, body {
 
 * {
   box-sizing: border-box;
+}
+
+.wg-notranslate {
+  translate: no;
+}
+
+[data-no-translate="true"] {
+  translate: no;
+}
+
+.user-content,
+.chat-message,
+.proposal-content,
+.order-description,
+.task-description,
+.review-text {
+  translate: no;
 }

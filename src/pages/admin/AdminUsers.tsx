@@ -221,7 +221,7 @@ export default function AdminUsers() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{user.name}</h3>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate" data-wg-notranslate>{user.name}</h3>
                           <span className={`px-1.5 py-0.5 text-[10px] sm:text-xs font-medium rounded-full ${getRoleBadge(user.role)}`}>
                             {getRoleLabel(user.role)}
                           </span>
@@ -246,7 +246,7 @@ export default function AdminUsers() {
                         </div>
                         <p className="text-xs sm:text-sm text-gray-600 truncate">{user.email}</p>
                         {user.bio && (
-                          <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-1 sm:line-clamp-2">{user.bio}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-1 sm:line-clamp-2" data-wg-notranslate>{user.bio}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-[10px] sm:text-xs text-gray-500">
                           <span className="truncate">Рег: {formatDate(user.created_at)}</span>

@@ -747,7 +747,7 @@ export default function WalletPage() {
                         onClick={handleConnectStripe}
                         variant="default"
                         size="sm"
-                        className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E]"
+                        className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E] w-full sm:w-auto"
                       >
                         Продолжить настройку Stripe
                       </Button>
@@ -772,7 +772,7 @@ export default function WalletPage() {
                   <Button
                     onClick={handleConnectStripe}
                     variant="default"
-                    className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E]"
+                    className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E] w-full"
                   >
                     Подключить Stripe для вывода
                   </Button>

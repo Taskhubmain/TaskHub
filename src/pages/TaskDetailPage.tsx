@@ -163,7 +163,7 @@ export default function TaskDetailPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <CardTitle className="text-2xl mb-3">{task.title}</CardTitle>
+                      <CardTitle className="text-2xl mb-3 task-title" data-wg-notranslate>{task.title}</CardTitle>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="secondary">{task.category}</Badge>
                         {task.tags.map((tag) => (
@@ -186,7 +186,7 @@ export default function TaskDetailPage() {
                 <CardContent className="grid gap-6">
                   <div>
                     <h3 className="font-semibold mb-2">Описание</h3>
-                    <p className="text-[#3F7F6E] leading-relaxed whitespace-pre-wrap">{task.description}</p>
+                    <p className="text-[#3F7F6E] leading-relaxed whitespace-pre-wrap task-description" data-wg-notranslate>{task.description}</p>
                   </div>
 
                   {task.features && task.features.length > 0 && (
@@ -196,7 +196,7 @@ export default function TaskDetailPage() {
                         {task.features.map((feature, i) => (
                           <div key={i} className="flex items-start gap-2">
                             <CheckCircle className="h-4 w-4 text-[#6FE7C8] mt-0.5 flex-shrink-0" />
-                            <span className="text-[#3F7F6E]">{feature}</span>
+                            <span className="text-[#3F7F6E]" data-wg-notranslate>{feature}</span>
                           </div>
                         ))}
                       </div>

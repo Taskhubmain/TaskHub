@@ -727,7 +727,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6 items-start">
-            <div className="grid gap-4 lg:gap-6 lg:sticky lg:top-24 lg:self-start">
+            <div className="grid gap-4 lg:gap-6">
               <Card>
                 <CardContent className="p-4 lg:p-6 grid gap-3 lg:gap-4">
                   <div className="flex items-center gap-3">
@@ -944,8 +944,8 @@ export default function ProfilePage() {
                             </div>
                           )}
                           <CardContent className="p-4">
-                            <div className="font-medium mb-1">{project.title}</div>
-                            <p className="text-sm text-[#3F7F6E] mb-3 line-clamp-2">{project.description}</p>
+                            <div className="font-medium mb-1" data-wg-notranslate>{project.title}</div>
+                            <p className="text-sm text-[#3F7F6E] mb-3 line-clamp-2" data-wg-notranslate>{project.description}</p>
                             <div className="flex flex-wrap gap-1">
                               {project.tags?.slice(0, 3).map((tag: string) => (
                                 <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
@@ -1128,12 +1128,12 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="p-4 lg:p-6 pt-0 grid gap-4 lg:gap-6">
                       <div>
-                        <h3 className="font-semibold text-base lg:text-lg mb-2">{profile.headline}</h3>
-                        <p className="text-sm lg:text-base text-[#3F7F6E] leading-relaxed mb-3 lg:mb-4">{profile.about}</p>
+                        <h3 className="font-semibold text-base lg:text-lg mb-2" data-wg-notranslate>{profile.headline}</h3>
+                        <p className="text-sm lg:text-base text-[#3F7F6E] leading-relaxed mb-3 lg:mb-4 profile-bio" data-wg-notranslate>{profile.about}</p>
                         {profile.bio && (
                           <div className="mt-3 lg:mt-4 p-3 lg:p-4 rounded-xl bg-gradient-to-br from-[#EFFFF8] to-white border">
                             <h4 className="font-medium mb-2 text-xs lg:text-sm text-[#3F7F6E]">Подробнее обо мне</h4>
-                            <p className="text-xs lg:text-sm leading-relaxed">{profile.bio}</p>
+                            <p className="text-xs lg:text-sm leading-relaxed profile-bio" data-wg-notranslate>{profile.bio}</p>
                           </div>
                         )}
                       </div>
@@ -1211,7 +1211,7 @@ export default function ProfilePage() {
                         <h4 className="font-semibold text-sm lg:text-base mb-3 lg:mb-4">Навыки и технологии</h4>
                         <div className="flex flex-wrap gap-1.5 lg:gap-2">
                           {profile.skills.map((s) => (
-                            <Badge key={s} variant="secondary" className="px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm">
+                            <Badge key={s} variant="secondary" className="px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm" data-wg-notranslate>
                               {s}
                             </Badge>
                           ))}
@@ -1292,7 +1292,7 @@ export default function ProfilePage() {
                             <CardContent className="p-6 grid gap-3">
                               <div className="flex items-center gap-3">
                                 <div className="flex-1">
-                                  <div className="font-medium">{reviewerName}</div>
+                                  <div className="font-medium" data-wg-notranslate>{reviewerName}</div>
                                   <div className="text-xs text-[#3F7F6E]">
                                     {new Date(review.created_at).toLocaleDateString('ru-RU', {
                                       day: 'numeric',
@@ -1309,7 +1309,7 @@ export default function ProfilePage() {
                                   </div>
                                 </div>
                               </div>
-                              <p className="text-sm text-[#3F7F6E] leading-relaxed">
+                              <p className="text-sm text-[#3F7F6E] leading-relaxed review-text" data-wg-notranslate>
                                 {review.comment}
                               </p>
                             </CardContent>
@@ -1710,7 +1710,7 @@ export default function ProfilePage() {
             {previewItem && (
               <>
                 <DialogHeader>
-                  <DialogTitle>{previewItem.title}</DialogTitle>
+                  <DialogTitle data-wg-notranslate>{previewItem.title}</DialogTitle>
                   <DialogDescription className="flex items-center gap-2 mt-2">
                     <Badge variant="secondary">{previewItem.category}</Badge>
                     {previewType === 'order' && previewItem.engagement && <Badge variant="outline">{previewItem.engagement}</Badge>}
@@ -1724,7 +1724,7 @@ export default function ProfilePage() {
                 <div className="grid gap-4">
                   <div>
                     <div className="text-sm font-medium mb-2">Описание</div>
-                    <p className="text-sm text-[#3F7F6E] leading-relaxed whitespace-pre-wrap">{previewItem.description}</p>
+                    <p className="text-sm text-[#3F7F6E] leading-relaxed whitespace-pre-wrap" data-wg-notranslate>{previewItem.description}</p>
                   </div>
                   <div>
                     <div className="text-sm font-medium mb-2">Теги</div>

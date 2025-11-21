@@ -17,18 +17,66 @@ export function lazyLoadImage(img: HTMLImageElement) {
   }
 }
 
-export function optimizeImage(url: string, width?: number, quality?: number): string {
+export function optimizeImage(url: string, width?: number, quality: number = 80): string {
   if (!url) return url;
 
   // If it's a Supabase storage URL, we can add transformation params
   if (url.includes('supabase')) {
     const params = new URLSearchParams();
     if (width) params.append('width', width.toString());
-    if (quality) params.append('quality', quality.toString());
-    return url + (params.toString() ? '?' + params.toString() : '');
+    params.append('quality', quality.toString());
+    params.append('format', 'webp'); // Use WebP for better compression
+    return url + '?' + params.toString();
   }
 
   return url;
+}
+
+export async function compressImage(file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          },
+          'image/webp',
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+  });
 }
 
 export function preloadCriticalImages(urls: string[]) {

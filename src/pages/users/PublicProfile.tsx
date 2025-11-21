@@ -255,11 +255,17 @@ export default function PublicProfile() {
     }
 
     try {
-      const { data: existingChat } = await supabase
+      const { data: existingChats } = await supabase
         .from('chats')
-        .select('id')
-        .or(`and(participant1_id.eq.${currentUser.id},participant2_id.eq.${userId}),and(participant1_id.eq.${userId},participant2_id.eq.${currentUser.id})`)
-        .maybeSingle();
+        .select('id, participant1_id, participant2_id')
+        .or(`participant1_id.eq.${currentUser.id},participant1_id.eq.${userId}`)
+        .or(`participant2_id.eq.${currentUser.id},participant2_id.eq.${userId}`);
+
+      const existingChat = existingChats?.find(
+        (chat: any) =>
+          (chat.participant1_id === currentUser.id && chat.participant2_id === userId) ||
+          (chat.participant1_id === userId && chat.participant2_id === currentUser.id)
+      );
 
       if (existingChat) {
         window.location.hash = `/messages?chat=${existingChat.id}`;
@@ -277,6 +283,7 @@ export default function PublicProfile() {
         window.location.hash = `/messages?chat=${newChat.id}`;
       }
     } catch (error) {
+      console.error('Chat creation error:', error);
       alert('Ошибка при создании чата');
     }
   };

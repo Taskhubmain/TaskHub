@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import OAuthButtons from '@/components/auth/OAuthButtons';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useWeglot } from '@/hooks/useWeglot';
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -17,7 +17,7 @@ const pageVariants = {
 const pageTransition = { type: 'spring' as const, stiffness: 140, damping: 20, mass: 0.9 };
 
 export default function RegisterPage() {
-  const { t } = useTranslation();
+  const { t } = useWeglot();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,8 +78,8 @@ export default function RegisterPage() {
           <Card>
             <CardContent className="p-8">
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold tracking-tight mb-2">Регистрация</h1>
-                <p className="text-[#3F7F6E]">Создайте аккаунт на TaskHub</p>
+                <h1 className="text-3xl font-bold tracking-tight mb-2">{t('auth.register')}</h1>
+                <p className="text-[#3F7F6E]">{t('auth.registerTitle')}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="grid gap-4">
@@ -91,13 +91,13 @@ export default function RegisterPage() {
                 )}
 
                 <div className="grid gap-2">
-                  <label htmlFor="name" className="text-sm font-medium">Имя</label>
+                  <label htmlFor="name" className="text-sm font-medium">{t('auth.name')}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3F7F6E]" />
                     <Input
                       id="name"
                       type="text"
-                      placeholder="Ваше имя"
+                      placeholder={t('auth.namePlaceholder')}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-9 h-11"
@@ -110,13 +110,13 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <label htmlFor="email" className="text-sm font-medium">{t('auth.email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3F7F6E]" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-9 h-11"
@@ -127,7 +127,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label htmlFor="password" className="text-sm font-medium">Пароль (минимум 8 символов)</label>
+                  <label htmlFor="password" className="text-sm font-medium">{t('auth.passwordMin')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3F7F6E]" />
                     <Input
@@ -145,7 +145,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium">Подтвердите пароль</label>
+                  <label htmlFor="confirmPassword" className="text-sm font-medium">{t('auth.confirmPassword')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3F7F6E]" />
                     <Input

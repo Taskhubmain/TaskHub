@@ -153,7 +153,7 @@ export default function OrderDetailPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <CardTitle className="text-2xl mb-3">{order.title}</CardTitle>
+                      <CardTitle className="text-2xl mb-3 order-title" data-wg-notranslate>{order.title}</CardTitle>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="secondary">{order.category}</Badge>
                         <Badge variant="outline">{order.engagement}</Badge>
@@ -168,7 +168,7 @@ export default function OrderDetailPage() {
                 <CardContent className="grid gap-6">
                   <div>
                     <h3 className="font-semibold mb-2">Описание</h3>
-                    <p className="text-[#3F7F6E] leading-relaxed whitespace-pre-wrap">{order.description}</p>
+                    <p className="text-[#3F7F6E] leading-relaxed whitespace-pre-wrap order-description" data-wg-notranslate>{order.description}</p>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">

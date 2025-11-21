@@ -227,7 +227,7 @@ export default function ProposalsCreate() {
       return;
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await getSupabase()
       .from('profiles')
       .select('is_muted')
       .eq('id', user?.id)

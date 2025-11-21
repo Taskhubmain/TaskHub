@@ -516,7 +516,7 @@ export default function MarketPage() {
                       <BoostBadge isBoosted className="absolute top-3 right-3 z-10" />
                     )}
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base leading-6 pr-32">{item.title}</CardTitle>
+                      <CardTitle className="text-base leading-6 pr-32 order-title" data-wg-notranslate>{item.title}</CardTitle>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Badge variant="secondary">{item.category}</Badge>
                         {item.subcategory && <Badge variant="outline">{item.subcategory}</Badge>}
@@ -534,7 +534,7 @@ export default function MarketPage() {
                           <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
                         ))}
                       </div>
-                      <div className="text-sm text-[#3F7F6E] line-clamp-2">{item.description}</div>
+                      <div className="text-sm text-[#3F7F6E] line-clamp-2 order-description" data-wg-notranslate>{item.description}</div>
                     </CardContent>
                     <div className="flex flex-col xs-414:flex-row items-start xs-414:items-center justify-between gap-3 xs-414:gap-0 px-6 py-4 border-t">
                       <div
@@ -558,7 +558,7 @@ export default function MarketPage() {
                         )}
                         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-sm font-medium truncate">{profiles[item.user_id]?.name || 'Пользователь'}</span>
+                            <span className="text-sm font-medium truncate" data-wg-notranslate>{profiles[item.user_id]?.name || 'Пользователь'}</span>
                             <StarRating
                               rating={profiles[item.user_id]?.avg_rating || 0}
                               reviewsCount={profiles[item.user_id]?.reviews_count || 0}
@@ -670,7 +670,7 @@ export default function MarketPage() {
                   </div>
                 )}
                 <DialogHeader>
-                  <DialogTitle>
+                  <DialogTitle className="order-title" data-wg-notranslate>
                     {previewItem.title}
                   </DialogTitle>
                   <DialogDescription className="flex items-center gap-2 mt-2 flex-wrap">
@@ -687,7 +687,7 @@ export default function MarketPage() {
                 <div className="grid gap-4">
                   <div>
                     <div className="text-sm font-medium mb-2">Описание</div>
-                    <p className="text-sm text-[#3F7F6E]">{previewItem.description}</p>
+                    <p className="text-sm text-[#3F7F6E] order-description" data-wg-notranslate>{previewItem.description}</p>
                   </div>
                   <div>
                     <div className="text-sm font-medium mb-2">Теги</div>
@@ -702,7 +702,7 @@ export default function MarketPage() {
                       <div className="text-sm font-medium mb-2">Что входит</div>
                       <ul className="list-disc list-inside text-sm text-[#3F7F6E]">
                         {previewItem.features.map((f: string) => (
-                          <li key={f}>{f}</li>
+                          <li key={f} data-wg-notranslate>{f}</li>
                         ))}
                       </ul>
                     </div>
@@ -722,7 +722,7 @@ export default function MarketPage() {
                         </div>
                       )}
                       <div>
-                        <div className="font-medium">{profiles[previewItem.user_id]?.name || 'Пользователь'}</div>
+                        <div className="font-medium" data-wg-notranslate>{profiles[previewItem.user_id]?.name || 'Пользователь'}</div>
                         <div className="text-xs text-[#3F7F6E]">Опубликовано: {new Date(previewItem.created_at).toLocaleDateString()}</div>
                       </div>
                     </div>

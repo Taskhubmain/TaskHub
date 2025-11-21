@@ -652,10 +652,10 @@ export default function ProposalsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm xs-375:text-base mb-1 flex items-center gap-1.5 flex-wrap">
                           {activeTab === 'sent' ? (
-                            getProposalTitle(proposal)
+                            <span data-wg-notranslate>{getProposalTitle(proposal)}</span>
                           ) : (
                             <>
-                              <span>{profiles[proposal.user_id]?.name || 'Пользователь'}</span>
+                              <span data-wg-notranslate>{profiles[proposal.user_id]?.name || 'Пользователь'}</span>
                               <StarRating
                                 rating={profiles[proposal.user_id]?.avg_rating || 0}
                                 reviewsCount={profiles[proposal.user_id]?.reviews_count || 0}
@@ -667,7 +667,7 @@ export default function ProposalsPage() {
                         </div>
                         {activeTab === 'sent' && getItemOwnerId(proposal) && (
                           <div className="text-xs xs-375:text-sm text-[#3F7F6E] mb-1">
-                            Заказчик: {profiles[getItemOwnerId(proposal)]?.name || 'Пользователь'}
+                            Заказчик: <span data-wg-notranslate>{profiles[getItemOwnerId(proposal)]?.name || 'Пользователь'}</span>
                           </div>
                         )}
                         {activeTab === 'received' && (
@@ -685,7 +685,7 @@ export default function ProposalsPage() {
 
                     {/* Название заказа/задачи на отдельной строке */}
                     {activeTab === 'received' && (
-                      <div className="font-medium text-sm">
+                      <div className="font-medium text-sm" data-wg-notranslate>
                         {getProposalTitle(proposal)}
                       </div>
                     )}
@@ -799,7 +799,7 @@ export default function ProposalsPage() {
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold">
+                      <div className="font-semibold" data-wg-notranslate>
                         {profiles[selectedProposal.user_id]?.name || 'Пользователь'}
                       </div>
                       <div className="text-sm text-[#3F7F6E]">Нажмите, чтобы открыть профиль</div>
@@ -818,7 +818,7 @@ export default function ProposalsPage() {
                 </div>
                 <div>
                   <div className="text-sm font-medium mb-2">Сообщение</div>
-                  <div className="p-4 bg-[#EFFFF8] rounded-lg text-sm text-[#3F7F6E]">
+                  <div className="p-4 bg-[#EFFFF8] rounded-lg text-sm text-[#3F7F6E] proposal-content" data-wg-notranslate>
                     {selectedProposal.message || 'Сообщение не указано'}
                   </div>
                 </div>
@@ -829,14 +829,14 @@ export default function ProposalsPage() {
                       {proposalOptions[selectedProposal.id].map((option, index) => (
                         <div key={option.id} className="p-3 border rounded-lg bg-background">
                           <div className="flex items-start justify-between mb-1">
-                            <div className="font-medium text-sm">{option.title}</div>
+                            <div className="font-medium text-sm" data-wg-notranslate>{option.title}</div>
                             <div className="flex items-center gap-2 text-xs">
                               <Badge variant="outline">{selectedProposal.currency} {option.price}</Badge>
                               <Badge variant="outline">{option.delivery_days} дней</Badge>
                             </div>
                           </div>
                           {option.description && (
-                            <p className="text-xs text-[#3F7F6E] mt-1">{option.description}</p>
+                            <p className="text-xs text-[#3F7F6E] mt-1" data-wg-notranslate>{option.description}</p>
                           )}
                         </div>
                       ))}

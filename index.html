@@ -11,7 +11,22 @@
     <script>
       Weglot.initialize({
         api_key: 'wg_72ea14c3827931e2e6559d9be12a70350',
-        default_language: 'en'
+        default_language: 'ru',
+        excluded_blocks: [
+          '.wg-notranslate',
+          '[data-wg-notranslate]',
+          '[data-no-translate]',
+          '.chat-message',
+          '.order-title',
+          '.order-description',
+          '.task-title',
+          '.task-description',
+          '.proposal-content',
+          '.profile-bio',
+          '.review-text',
+          '.user-content',
+          '.ugc'
+        ]
       });
     </script>
     <!-- /Weglot -->
