@@ -18,7 +18,7 @@ export default function OAuthButtons({ onError, mode = 'login' }: OAuthButtonsPr
       setIsLoading(provider);
       const supabase = getSupabase();
 
-      const redirectUrl = `${window.location.origin}/#/`;
+      const redirectUrl = `${window.location.origin}/#/oauth-callback`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,

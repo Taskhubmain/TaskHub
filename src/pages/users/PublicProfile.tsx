@@ -20,7 +20,9 @@ const pageTransition = { type: 'spring' as const, stiffness: 140, damping: 20, m
 
 export default function PublicProfile() {
   const { user: currentUser } = useAuth();
-  const userId = window.location.hash.split('/').pop() || '';
+  const hash = window.location.hash.replace('#', '');
+  const pathParts = hash.split('?')[0].split('/');
+  const userId = pathParts[pathParts.length - 1] || '';
   const supabase = getSupabase();
 
   const [tab, setTab] = useState('portfolio');
