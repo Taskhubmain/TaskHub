@@ -83,11 +83,19 @@ export default function PublicProfile() {
     }
 
     try {
-      const { data, error } = await supabase
+      // Try to find profile by username first, then by ID
+      let query = supabase
         .from('profiles')
-        .select('*, learning_completed, last_seen_at')
-        .eq('id', userId)
-        .maybeSingle();
+        .select('*, learning_completed, last_seen_at');
+
+      // Check if userId looks like a UUID (contains dashes)
+      if (userId.includes('-')) {
+        query = query.eq('id', userId);
+      } else {
+        query = query.eq('username', userId);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
 

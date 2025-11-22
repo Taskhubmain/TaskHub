@@ -8,6 +8,8 @@ export default function OAuthCallback() {
         const supabase = getSupabase();
         const { data: { session }, error } = await supabase.auth.getSession();
 
+        console.log('OAuth callback - session:', session?.user?.id);
+
         if (error) {
           console.error('OAuth callback error:', error);
           window.location.hash = '#/login';
@@ -15,18 +17,31 @@ export default function OAuthCallback() {
         }
 
         if (session?.user) {
-          const { data: profile } = await supabase
+          console.log('OAuth callback - checking profile for user:', session.user.id);
+
+          // Wait a bit for profile to be created by trigger
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('profile_completed')
+            .select('profile_completed, username')
             .eq('id', session.user.id)
             .maybeSingle();
 
-          if (profile && !profile.profile_completed) {
+          console.log('OAuth callback - profile:', profile, 'error:', profileError);
+
+          if (!profile) {
+            console.log('OAuth callback - profile not found, redirecting to profile completion');
+            window.location.hash = '#/profile-completion';
+          } else if (!profile.profile_completed) {
+            console.log('OAuth callback - profile incomplete, redirecting to profile completion');
             window.location.hash = '#/profile-completion';
           } else {
+            console.log('OAuth callback - profile complete, redirecting to home');
             window.location.hash = '#/';
           }
         } else {
+          console.log('OAuth callback - no session, redirecting to login');
           window.location.hash = '#/login';
         }
       } catch (err) {

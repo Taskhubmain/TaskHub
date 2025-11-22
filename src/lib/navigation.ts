@@ -3,13 +3,15 @@ export const navigate = (path: string) => {
   window.location.hash = path;
 };
 
-export const navigateToProfile = (userId: string, currentUserId: string | undefined) => {
+export const navigateToProfile = (userId: string, currentUserId: string | undefined, username?: string) => {
   if (!userId) return;
 
   if (userId === currentUserId) {
     navigate('/profile');
   } else {
-    navigate(`/users/${userId}`);
+    // Use username if provided, otherwise use UUID
+    const identifier = username || userId;
+    navigate(`/users/${identifier}`);
   }
 };
 
