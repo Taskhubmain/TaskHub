@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Redirecting…</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Roboto, system-ui, -apple-system; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>Возвращаем вас в приложение…</h3>
+    <p>Если перенаправление не произошло автоматически — нажмите кнопку.</p>
+    <button id="open">Открыть в приложении</button>
+  </div>
+
+  <script>
+    // Берём полный query/hash (включая #)
+    const params = window.location.search + window.location.hash;
+    // Редирект на custom scheme (сохраняем state, code и т.д.)
+    const appUrl = 'com.taskhub.app://oauth-callback' + params;
+
+    // Попытка открыть приложение
+    function openApp() {
+      // Сначала пробуем сменить location (работает в большинстве мобильных браузеров)
+      window.location = appUrl;
+
+      // На случай десктопа/браузера — оставим ссылку для клика
+      const btn = document.getElementById('open');
+      btn.onclick = () => { window.location = appUrl; };
+    }
+
+    // Небольшая задержка для UX
+    setTimeout(openApp, 300);
+  </script>
+</body>
+</html>
