@@ -361,7 +361,7 @@ function About() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="hhttps://i.ibb.co/4nzXscL5/pexels-photo-3182773.jpg" alt="" className="h-full w-full object-cover" />
+            <img src="https://i.ibb.co/4nzXscL5/pexels-photo-3182773.jpg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
             <img src="https://i.ibb.co/yFPdZ5Sq/pexels-photo-3184639.jpg" alt="" className="h-full w-full object-cover" />
