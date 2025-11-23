@@ -166,16 +166,16 @@ function Hero() {
               className="grid grid-cols-2 gap-4"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://ibb.co/TxDH4VHY" alt="" className="h-full w-full object-cover" />
+                <img src="https://i.ibb.co/B23j9r4d/pexels-photo-3184360.jpg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://ibb.co/Q3ShgmYs" alt="" className="h-full w-full object-cover" />
+                <img src="https://i.ibb.co/Kpc92M9b/pexels-photo-3184292.jpg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="hhttps://ibb.co/xtWBmybR" alt="" className="h-full w-full object-cover" />
+                <img src="https://i.ibb.co/YmY53q6/pexels-photo-3184296.jpg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://ibb.co/dw1xwcmp" alt="" className="h-full w-full object-cover" />
+                <img src="https://i.ibb.co/Zpt7pJ2g/pexels-photo-3184465.jpg" alt="" className="h-full w-full object-cover" />
               </div>
             </motion.div>
           </div>
@@ -361,16 +361,16 @@ function About() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://ibb.co/gZ9mfwVJ" alt="" className="h-full w-full object-cover" />
+            <img src="hhttps://i.ibb.co/4nzXscL5/pexels-photo-3182773.jpg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://ibb.co/CKLn0J02" alt="" className="h-full w-full object-cover" />
+            <img src="https://i.ibb.co/yFPdZ5Sq/pexels-photo-3184639.jpg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://ibb.co/N2CpMm1Q" alt="" className="h-full w-full object-cover" />
+            <img src="https://i.ibb.co/yF28shsS/pexels-photo-3184357.jpg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://ibb.co/vpgNHKb" alt="" className="h-full w-full object-cover" />
+            <img src="https://i.ibb.co/679GMsD6/pexels-photo-3184325.jpg" alt="" className="h-full w-full object-cover" />
           </div>
         </div>
       </div>
