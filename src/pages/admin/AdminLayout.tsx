@@ -43,7 +43,7 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
 
   const handleSignOut = async () => {
     await logout();
-    window.location.hash = '#/admin/login';
+    // logout() already handles redirect and reload
   };
 
   const navigation = [

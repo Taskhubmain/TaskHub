@@ -243,7 +243,9 @@ class AuthService {
 
     this.notify();
 
-    window.location.hash = '/';
+    // Redirect to home and reload page
+    window.location.href = window.location.origin + '/#/';
+    window.location.reload();
   }
 
   async refreshAccessToken(): Promise<boolean> {
