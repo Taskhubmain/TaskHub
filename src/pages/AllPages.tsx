@@ -378,98 +378,10 @@ export function AdminPage() {
   );
 }
 
-export function TermsPage() {
-  const [htmlContent, setHtmlContent] = React.useState('');
-
-  React.useEffect(() => {
-    fetch('/src/assets/legal/terms.html')
-      .then(res => res.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const body = doc.body.innerHTML;
-        setHtmlContent(body);
-      })
-      .catch(err => console.error('Error loading terms:', err));
-  }, []);
-
-  return (
-    <motion.div key="terms" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="shadow-lg border-[#6FE7C8]/20">
-          <CardContent className="p-8 md:p-12">
-            <div
-              className="legal-content prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          </CardContent>
-        </Card>
-      </section>
-    </motion.div>
-  );
-}
-
-export function PrivacyPage() {
-  const [htmlContent, setHtmlContent] = React.useState('');
-
-  React.useEffect(() => {
-    fetch('/src/assets/legal/privacy.html')
-      .then(res => res.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const body = doc.body.innerHTML;
-        setHtmlContent(body);
-      })
-      .catch(err => console.error('Error loading privacy:', err));
-  }, []);
-
-  return (
-    <motion.div key="privacy" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="shadow-lg border-[#6FE7C8]/20">
-          <CardContent className="p-8 md:p-12">
-            <div
-              className="legal-content prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          </CardContent>
-        </Card>
-      </section>
-    </motion.div>
-  );
-}
-
-export function PaymentsPage() {
-  const [htmlContent, setHtmlContent] = React.useState('');
-
-  React.useEffect(() => {
-    fetch('/src/assets/legal/payments.html')
-      .then(res => res.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const body = doc.body.innerHTML;
-        setHtmlContent(body);
-      })
-      .catch(err => console.error('Error loading payments:', err));
-  }, []);
-
-  return (
-    <motion.div key="payments" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="shadow-lg border-[#6FE7C8]/20">
-          <CardContent className="p-8 md:p-12">
-            <div
-              className="legal-content prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          </CardContent>
-        </Card>
-      </section>
-    </motion.div>
-  );
-}
+// TermsPage, PrivacyPage, PaymentsPage moved to separate files:
+// - src/pages/TermsPage.tsx
+// - src/pages/PrivacyPage.tsx
+// - src/pages/PaymentsInfoPage.tsx
 
 export function FAQPage() {
   const faqs = [

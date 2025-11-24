@@ -50,6 +50,9 @@ import PaymentMethodsPage from './pages/PaymentMethodsPage';
 import MediaLibraryPage from './pages/MediaLibraryPage';
 import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import WalletPage from './pages/WalletPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import PaymentsInfoPage from './pages/PaymentsInfoPage';
 import {
   DealPage,
   NotificationsPage,
@@ -59,9 +62,6 @@ import {
   SettingsSecurityPage,
   OnboardingPage,
   AdminPage,
-  TermsPage,
-  PrivacyPage,
-  PaymentsPage,
   FAQPage,
   ContactPage,
   NotFoundPage
@@ -201,7 +201,7 @@ function AppContent() {
   } else if (route === '/privacy') {
     Page = PrivacyPage;
   } else if (route === '/payments') {
-    Page = PaymentsPage;
+    Page = PaymentsInfoPage;
   } else if (route === '/faq') {
     Page = FAQPage;
   } else if (route === '/contact') {
