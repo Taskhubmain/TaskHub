@@ -65,11 +65,14 @@ export default function RecommendationsPage() {
     if (hasSubscription !== null && profile) {
       if (hasSubscription) {
         // Auto-generate recommendations on page entry
+        console.log('[RecommendationsPage] Subscription active, generating recommendations');
         generateRecommendations();
       } else {
+        console.log('[RecommendationsPage] No subscription, loading general orders');
         loadGeneralOrders();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSubscription, profile]);
 
   const loadProfile = async () => {
@@ -102,12 +105,14 @@ export default function RecommendationsPage() {
 
       if (error) throw error;
 
+      console.log('[RecommendationsPage] Subscription status:', data);
       setHasSubscription(data || false);
 
       if (data) {
         const { data: days } = await supabase.rpc('get_subscription_days_remaining', {
           p_user_id: user.id,
         });
+        console.log('[RecommendationsPage] Days remaining:', days);
         setDaysRemaining(days || 0);
       }
     } catch (err) {
@@ -308,9 +313,14 @@ export default function RecommendationsPage() {
     }
   };
 
-  const handleSubscriptionSuccess = () => {
-    loadProfile();
+  const handleSubscriptionSuccess = async () => {
     setShowPurchaseDialog(false);
+    console.log('[RecommendationsPage] Purchase success, reloading profile...');
+    // Reload profile to get updated subscription status
+    setLoading(true);
+    await loadProfile();
+    // The useEffect will automatically trigger generateRecommendations when hasSubscription changes
+    console.log('[RecommendationsPage] Profile reloaded');
   };
 
   const paginatedRecommendations = useMemo(() => {

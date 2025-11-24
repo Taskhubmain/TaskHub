@@ -117,6 +117,14 @@ export default function SubscriptionPurchaseDialog({
 
       if (ledgerError) throw ledgerError;
 
+      console.log('[SubscriptionPurchase] Purchase completed successfully');
+
+      // Show success message
+      alert(`Подписка успешно активирована на ${plan.days} дней!`);
+
+      // Wait a bit to ensure DB writes are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       onSuccess();
       onClose();
     } catch (err: any) {
