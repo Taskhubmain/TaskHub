@@ -277,10 +277,10 @@ export default function NavBar() {
 
         <div className="hidden lg:flex items-center gap-6 text-sm">
           {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
-            const isMessages = link.label === 'Сообщения';
-            const isDeals = link.label === 'Мои сделки';
-            const isProposals = link.label === 'Отклики';
-            const isWallet = link.label === 'Кошелёк';
+            const isMessages = link.href === '#/messages';
+            const isDeals = link.href === '#/my-deals';
+            const isProposals = link.href === '#/proposals';
+            const isWallet = link.href === '#/wallet';
             const showBadge =
               (isMessages && hasUnread) ||
               (isDeals && hasNewDeals) ||
@@ -358,7 +358,7 @@ export default function NavBar() {
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
           <div className="px-4 py-3 space-y-1">
             {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
-              const isMessages = link.label === t('nav.messages');
+              const isMessages = link.href === '#/messages';
               return (
                 <a
                   key={link.href}
