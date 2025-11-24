@@ -776,7 +776,7 @@ export default function ProposalsPage() {
                 <DialogTitle>
                   Детали отклика
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription data-wg-notranslate>
                   {getProposalTitle(selectedProposal)}
                 </DialogDescription>
               </DialogHeader>

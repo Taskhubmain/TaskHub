@@ -497,6 +497,7 @@ export default function MyDealsPage() {
                           <a
                             href={`#/order/${order.id}`}
                             className="text-base xs-375:text-lg font-semibold hover:text-[#6FE7C8] transition-colors flex-1 min-w-0"
+                            data-wg-notranslate
                           >
                             {order.title}
                           </a>
@@ -550,7 +551,7 @@ export default function MyDealsPage() {
                           ) : null}
                         </div>
                       </div>
-                      <p className="text-[#3F7F6E] mb-4 line-clamp-2 text-sm xs-375:text-base">
+                      <p className="text-[#3F7F6E] mb-4 line-clamp-2 text-sm xs-375:text-base" data-wg-notranslate>
                         {order.description}
                       </p>
                       <div className="flex flex-col xs-375:flex-row xs-375:justify-between xs-375:items-center gap-2 xs-375:gap-4 text-sm xs-375:text-base mb-3">
@@ -588,6 +589,7 @@ export default function MyDealsPage() {
                             <a
                               href={`#/order/${order.id}`}
                               className="text-lg font-semibold hover:text-[#6FE7C8] transition-colors truncate"
+                              data-wg-notranslate
                             >
                               {order.title}
                             </a>
@@ -601,7 +603,7 @@ export default function MyDealsPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-[#3F7F6E] text-sm mb-3 line-clamp-2">
+                          <p className="text-[#3F7F6E] text-sm mb-3 line-clamp-2" data-wg-notranslate>
                             {order.description}
                           </p>
                           <div className="flex items-center flex-wrap gap-5 text-sm text-[#3F7F6E]">
@@ -877,6 +879,7 @@ export default function MyDealsPage() {
                           <a
                             href={`#/task/${task.id}`}
                             className="text-base xs-375:text-lg font-semibold hover:text-[#6FE7C8] transition-colors flex-1 min-w-0"
+                            data-wg-notranslate
                           >
                             {task.title}
                           </a>
@@ -929,7 +932,7 @@ export default function MyDealsPage() {
                           ) : null}
                         </div>
                       </div>
-                      <p className="text-[#3F7F6E] mb-4 line-clamp-2 text-sm xs-375:text-base">
+                      <p className="text-[#3F7F6E] mb-4 line-clamp-2 text-sm xs-375:text-base" data-wg-notranslate>
                         {task.description}
                       </p>
                       <div className="flex flex-col xs-375:flex-row xs-375:justify-between xs-375:items-center gap-2 xs-375:gap-4 text-sm xs-375:text-base mb-3">
@@ -965,6 +968,7 @@ export default function MyDealsPage() {
                             <a
                               href={`#/task/${task.id}`}
                               className="text-lg font-semibold hover:text-[#6FE7C8] transition-colors truncate"
+                              data-wg-notranslate
                             >
                               {task.title}
                             </a>
@@ -978,7 +982,7 @@ export default function MyDealsPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-[#3F7F6E] text-sm mb-3 line-clamp-2">
+                          <p className="text-[#3F7F6E] text-sm mb-3 line-clamp-2" data-wg-notranslate>
                             {task.description}
                           </p>
                           <div className="flex items-center flex-wrap gap-5 text-sm text-[#3F7F6E]">
