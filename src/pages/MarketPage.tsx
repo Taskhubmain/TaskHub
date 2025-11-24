@@ -127,8 +127,12 @@ export default function MarketPage() {
     setLoading(true);
 
     try {
-      // Close expired orders first
-      await getSupabase().rpc('close_expired_orders');
+      // Close expired orders first (ignore errors if function doesn't exist)
+      try {
+        await getSupabase().rpc('close_expired_orders');
+      } catch (rpcError) {
+        console.log('[MarketPage] close_expired_orders RPC not available:', rpcError);
+      }
 
       let ordersQuery = getSupabase()
         .from('orders')

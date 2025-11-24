@@ -113,25 +113,6 @@ export default function OrderCreatePage() {
       return;
     }
 
-    const supabase = getSupabase();
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_muted')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error('[OrderCreate] Profile fetch error:', profileError);
-      alert('Ошибка при проверке профиля');
-      return;
-    }
-
-    if (profile?.is_muted) {
-      alert('Вы не можете создавать заказы, так как ваш аккаунт замьючен');
-      return;
-    }
-
-
     if (!validatePrices()) {
       return;
     }
@@ -141,101 +122,134 @@ export default function OrderCreatePage() {
       return;
     }
 
+    // Сохраняем данные формы ДО асинхронных вызовов
+    const formElement = e.currentTarget;
+    const formData = new FormData(formElement);
+    const currency = String(formData.get('currency'));
+    const engagement = String(formData.get('engagement'));
+    const deadline = formData.get('deadline') ? String(formData.get('deadline')) : null;
+    const subcategoryFormId = String(formData.get('subcategory') || '');
+
     setLoading(true);
-    const fd = new FormData(e.currentTarget);
 
     try {
-      const moderationResponse = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/moderate-content`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            content: `${title} ${description}`,
-            contentType: 'order',
-          }),
-        }
-      );
+      const supabase = getSupabase();
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_muted')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      const moderationResult = await moderationResponse.json();
-
-      if (moderationResult.flagged && moderationResult.action === 'blocked') {
-        alert(moderationResult.message || 'Ваш заказ содержит запрещенный контент');
+      if (profileError) {
+        console.error('[OrderCreate] Profile fetch error:', profileError);
         setLoading(false);
+        alert('Ошибка при проверке профиля');
         return;
       }
 
-      if (moderationResult.flagged && moderationResult.action === 'warning') {
-        const proceed = confirm(`${moderationResult.message || 'Обнаружено потенциально нежелательное содержимое'}\\n\\nПродолжить?`);
-        if (!proceed) {
+      if (profile?.is_muted) {
+        setLoading(false);
+        alert('Вы не можете создавать заказы, так как ваш аккаунт замьючен');
+        return;
+      }
+
+      // Moderation check
+      try {
+        const moderationResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/moderate-content`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              content: `${title} ${description}`,
+              contentType: 'order',
+            }),
+          }
+        );
+
+        const moderationResult = await moderationResponse.json();
+
+        if (moderationResult.flagged && moderationResult.action === 'blocked') {
           setLoading(false);
+          alert(moderationResult.message || 'Ваш заказ содержит запрещенный контент');
           return;
         }
+
+        if (moderationResult.flagged && moderationResult.action === 'warning') {
+          const proceed = confirm(`${moderationResult.message || 'Обнаружено потенциально нежелательное содержимое'}\\n\\nПродолжить?`);
+          if (!proceed) {
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('[OrderCreate] Moderation error:', err);
       }
-    } catch (err) {
-      console.error('Moderation error:', err);
-    }
 
-    const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
+      const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
 
-    const { data: { user: authUser } } = await getSupabase().auth.getUser();
-    if (!authUser) {
-      setLoading(false);
-      alert('Ошибка аутентификации');
-      window.location.hash = '#/login';
-      return;
-    }
+      const { data: { user: authUser } } = await getSupabase().auth.getUser();
+      if (!authUser) {
+        setLoading(false);
+        alert('Ошибка аутентификации');
+        window.location.hash = '#/login';
+        return;
+      }
 
-    // Get category and subcategory names
-    const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-    const categoryName = selectedCategory ? selectedCategory.name : '';
+      // Get category and subcategory names
+      const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+      const categoryName = selectedCategory ? selectedCategory.name : '';
 
-    const subcategoryId = String(fd.get('subcategory') || '');
-    const selectedSubcategory = subcategories.find(sc => sc.id === subcategoryId);
-    const subcategoryName = selectedSubcategory ? selectedSubcategory.name : null;
+      const selectedSubcategory = subcategories.find(sc => sc.id === subcategoryFormId);
+      const subcategoryName = selectedSubcategory ? selectedSubcategory.name : null;
 
-    console.log('[OrderCreate] Creating order with data:', {
-      user_id: authUser.id,
-      title,
-      category: categoryName,
-      price_min: Number(minPrice),
-      price_max: Number(maxPrice)
-    });
-
-    const { data, error } = await getSupabase()
-      .from('orders')
-      .insert({
+      console.log('[OrderCreate] Creating order with data:', {
         user_id: authUser.id,
         title,
-        description,
         category: categoryName,
-        subcategory: subcategoryName,
         price_min: Number(minPrice),
-        price_max: Number(maxPrice),
-        currency: String(fd.get('currency')),
-        engagement: String(fd.get('engagement')),
-        deadline: fd.get('deadline') ? String(fd.get('deadline')) : null,
-        tags: tagsArray,
-        use_escrow: false,
-        status: 'open'
-      })
-      .select()
-      .single();
+        price_max: Number(maxPrice)
+      });
 
-    setLoading(false);
+      const { data, error } = await getSupabase()
+        .from('orders')
+        .insert({
+          user_id: authUser.id,
+          title,
+          description,
+          category: categoryName,
+          subcategory: subcategoryName,
+          price_min: Number(minPrice),
+          price_max: Number(maxPrice),
+          currency,
+          engagement,
+          deadline,
+          tags: tagsArray,
+          use_escrow: false,
+          status: 'open'
+        })
+        .select()
+        .single();
 
-    if (error) {
-      console.error('[OrderCreate] Error creating order:', error);
-      alert('Ошибка при создании заказа: ' + error.message);
-      return;
+      setLoading(false);
+
+      if (error) {
+        console.error('[OrderCreate] Error creating order:', error);
+        alert('Ошибка при создании заказа: ' + error.message);
+        return;
+      }
+
+      console.log('[OrderCreate] Order created successfully:', data);
+      alert('Заказ успешно опубликован!');
+      window.location.hash = '#/market';
+    } catch (error: any) {
+      setLoading(false);
+      console.error('[OrderCreate] Unexpected error:', error);
+      alert('Произошла ошибка: ' + (error.message || 'Попробуйте позже'));
     }
-
-    console.log('[OrderCreate] Order created successfully:', data);
-    alert('Заказ успешно опубликован!');
-    window.location.hash = '#/market';
   };
 
   return (
