@@ -164,23 +164,32 @@ export default function ProfileCompletionPage() {
         contact_gmail: formData.contact_gmail || 'не указан',
         bio: formData.bio || 'Привет! Я использую TaskHub',
         profile_completed: true,
+        updated_at: new Date().toISOString(),
       };
 
       if (avatarUrl) {
         updateData.avatar_url = avatarUrl;
       }
 
-      const { error } = await supabase
+      console.log('[ProfileCompletion] Updating profile with data:', updateData);
+
+      const { error, data: updatedProfile } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[ProfileCompletion] Update error:', error);
+        throw error;
+      }
 
+      console.log('[ProfileCompletion] Profile updated successfully:', updatedProfile);
+      alert('Профиль успешно обновлён!');
       window.location.hash = '/me';
-    } catch (error) {
-      console.error('Error completing profile:', error);
-      alert('Ошибка при сохранении профиля');
+    } catch (error: any) {
+      console.error('[ProfileCompletion] Error completing profile:', error);
+      alert('Ошибка при сохранении профиля: ' + (error.message || 'Неизвестная ошибка'));
     } finally {
       setLoading(false);
     }

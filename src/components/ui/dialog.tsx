@@ -7,11 +7,27 @@ interface DialogProps {
   children: React.ReactNode;
 }
 
+let dialogCounter = 0;
+
 export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+  const [zIndex] = React.useState(() => {
+    if (open) {
+      dialogCounter += 10;
+      return 50 + dialogCounter;
+    }
+    return 50;
+  });
+
+  React.useEffect(() => {
+    if (!open) {
+      dialogCounter = Math.max(0, dialogCounter - 10);
+    }
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex }}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -35,7 +51,8 @@ export const DialogContent: React.FC<{ children: React.ReactNode; className?: st
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
-      className={`relative z-50 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl ${className}`}
+      className={`relative w-full max-w-lg rounded-xl bg-white p-6 shadow-xl ${className}`}
+      style={{ zIndex: 10 }}
     >
       {children}
     </motion.div>

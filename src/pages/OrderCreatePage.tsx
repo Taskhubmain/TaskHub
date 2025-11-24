@@ -176,6 +176,7 @@ export default function OrderCreatePage() {
 
     const { data: { user: authUser } } = await getSupabase().auth.getUser();
     if (!authUser) {
+      setLoading(false);
       alert('Ошибка аутентификации');
       window.location.hash = '#/login';
       return;
