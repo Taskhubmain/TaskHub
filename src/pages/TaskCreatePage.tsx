@@ -156,21 +156,27 @@ export default function TaskCreatePage() {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const supabase = getSupabase();
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_muted')
-      .eq('id', user?.id)
-      .single();
-
-    if (profile?.is_muted) {
-      alert('Вы не можете создавать задания, так как ваш аккаунт замьючен');
+    if (!isAuthenticated || !user) {
+      alert('Войдите в систему для создания объявления');
+      window.location.hash = '#/login';
       return;
     }
 
-    if (!isAuthenticated) {
-      alert('Войдите в систему для создания объявления');
-      window.location.hash = '#/login';
+    const supabase = getSupabase();
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_muted')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('[TaskCreate] Profile fetch error:', profileError);
+      alert('Ошибка при проверке профиля');
+      return;
+    }
+
+    if (profile?.is_muted) {
+      alert('Вы не можете создавать задания, так как ваш аккаунт замьючен');
       return;
     }
 
@@ -225,6 +231,7 @@ export default function TaskCreatePage() {
 
     const { data: { user: authUser } } = await getSupabase().auth.getUser();
     if (!authUser) {
+      setLoading(false);
       alert('Ошибка аутентификации');
       window.location.hash = '#/login';
       return;
@@ -236,6 +243,14 @@ export default function TaskCreatePage() {
 
     const selectedSubcategory = subcategories.find(sc => sc.id === selectedSubcategoryId);
     const subcategoryName = selectedSubcategory ? selectedSubcategory.name : null;
+
+    console.log('[TaskCreate] Creating task with data:', {
+      user_id: authUser.id,
+      title,
+      category: categoryName,
+      price: Number(price),
+      delivery_days: Number(fd.get('delivery_days'))
+    });
 
     const { data, error } = await getSupabase()
       .from('tasks')
@@ -260,11 +275,12 @@ export default function TaskCreatePage() {
     setLoading(false);
 
     if (error) {
-      console.error('Error creating task:', error);
+      console.error('[TaskCreate] Error creating task:', error);
       alert('Ошибка при создании объявления: ' + error.message);
       return;
     }
 
+    console.log('[TaskCreate] Task created successfully:', data);
     alert('Объявление успешно опубликовано!');
     window.location.hash = '#/market';
   };

@@ -107,23 +107,30 @@ export default function OrderCreatePage() {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!isAuthenticated || !user) {
+      alert('Войдите в систему для создания заказа');
+      window.location.hash = '#/login';
+      return;
+    }
+
     const supabase = getSupabase();
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('is_muted')
-      .eq('id', user?.id)
-      .single();
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('[OrderCreate] Profile fetch error:', profileError);
+      alert('Ошибка при проверке профиля');
+      return;
+    }
 
     if (profile?.is_muted) {
       alert('Вы не можете создавать заказы, так как ваш аккаунт замьючен');
       return;
     }
 
-    if (!isAuthenticated) {
-      alert('Войдите в систему для создания заказа');
-      window.location.hash = '#/login';
-      return;
-    }
 
     if (!validatePrices()) {
       return;
@@ -190,6 +197,14 @@ export default function OrderCreatePage() {
     const selectedSubcategory = subcategories.find(sc => sc.id === subcategoryId);
     const subcategoryName = selectedSubcategory ? selectedSubcategory.name : null;
 
+    console.log('[OrderCreate] Creating order with data:', {
+      user_id: authUser.id,
+      title,
+      category: categoryName,
+      price_min: Number(minPrice),
+      price_max: Number(maxPrice)
+    });
+
     const { data, error } = await getSupabase()
       .from('orders')
       .insert({
@@ -213,11 +228,12 @@ export default function OrderCreatePage() {
     setLoading(false);
 
     if (error) {
-      console.error('Error creating order:', error);
+      console.error('[OrderCreate] Error creating order:', error);
       alert('Ошибка при создании заказа: ' + error.message);
       return;
     }
 
+    console.log('[OrderCreate] Order created successfully:', data);
     alert('Заказ успешно опубликован!');
     window.location.hash = '#/market';
   };
