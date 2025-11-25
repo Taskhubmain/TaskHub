@@ -259,6 +259,7 @@ export default function ProfilePage() {
     if (!user) return;
 
     try {
+      console.log('[ProfilePage] Loading recommendations for user:', user.id);
       const { data, error } = await supabase
         .from('order_recommendations')
         .select(`
@@ -288,9 +289,21 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
+      console.log('[ProfilePage] Raw recommendations:', data);
+
       const validRecommendations = (data || []).filter(
         (rec: any) => rec.order && rec.order.status === 'open'
       );
+
+      console.log('[ProfilePage] Valid recommendations:', validRecommendations);
+      validRecommendations.forEach((rec: any, index: number) => {
+        console.log(`[ProfilePage] Rec ${index}:`, {
+          title: rec.order.title,
+          price_min: rec.order.price_min,
+          price_max: rec.order.price_max,
+          currency: rec.order.currency
+        });
+      });
 
       setRecommendations(validRecommendations);
     } catch (err) {
@@ -2018,9 +2031,10 @@ export default function ProfilePage() {
                                           </CardContent>
                                           <div className="flex items-center justify-between px-6 py-4 border-t">
                                             <PriceDisplay
-                                              priceMin={order.price_min}
-                                              priceMax={order.price_max}
-                                              selectedRegion={selectedRegion}
+                                              amount={order.price_min}
+                                              maxAmount={order.price_max}
+                                              showRange={true}
+                                              fromCurrency={order.currency || 'USD'}
                                             />
                                             <Button
                                               onClick={(e) => {
@@ -2321,8 +2335,10 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-xl">
                       <PriceDisplay
-                        priceMin={previewItem.price_min}
-                        priceMax={previewItem.price_max}
+                        amount={previewItem.price_min}
+                        maxAmount={previewItem.price_max}
+                        showRange={true}
+                        fromCurrency={previewItem.currency || 'USD'}
                         selectedRegion={selectedRegion}
                       />
                     </div>
