@@ -937,16 +937,17 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6 items-start">
-            <div className="grid gap-4 lg:gap-6 lg:sticky lg:top-20 lg:self-start lg:z-10">
-              <Card>
-                <CardContent className="p-4 lg:p-6 grid gap-3 lg:gap-4">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+            <div className="grid gap-6 sticky top-24 self-start overflow-visible lg:z-10">
+              <div className="overflow-visible">
+                <Card className="overflow-visible">
+                  <CardContent className="p-6 grid gap-4 overflow-visible">
                   <div className="flex items-center gap-3">
                     <div className="relative flex-shrink-0">
                       <img src={profile.avatar} alt="avatar" className="h-12 w-12 lg:h-16 lg:w-16 rounded-2xl object-cover" />
                       {profile.learningCompleted && (
-                        <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-1.5 shadow-lg" title="Прошел обучение">
+                        <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-1.5 shadow-lg z-50" title="Прошел обучение">
                           <GraduationCap className="h-3 w-3 lg:h-3.5 lg:w-3.5 text-white" />
                         </div>
                       )}
@@ -991,7 +992,7 @@ export default function ProfilePage() {
                     <Button asChild variant="secondary" size="sm" className="h-9 text-sm"><a href="#/order/new">Создать заказ</a></Button>
                   </div>
                   <div className="flex items-center justify-between text-xs lg:text-sm text-[#3F7F6E]">
-                    <div className="relative">
+                    <div className="relative overflow-visible">
                       <button
                         className="flex items-center gap-1 underline hover:text-[#2F6F5E] transition-colors"
                         onClick={handleShareProfile}
@@ -1017,7 +1018,8 @@ export default function ProfilePage() {
                     <button className="underline" onClick={() => setTab('edit')}>Редактировать</button>
                   </div>
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
 
               {proposalLimitData && (
                 <div className="hidden lg:block">
@@ -1095,9 +1097,9 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            <div className="grid gap-4 lg:gap-6 relative z-20">
+            <div className="grid gap-6 relative z-20">
               <Card>
-                <CardContent className="p-3 lg:p-6">
+                <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2">
                     <div className="flex flex-wrap items-center gap-2 lg:flex-1">
                       {[{ id: 'portfolio', label: 'Портфолио' }, { id: 'market', label: 'Биржа' }, { id: 'about', label: 'О себе' }, { id: 'reviews', label: 'Отзывы' }, { id: 'recommendations', label: 'Рекомендации' }, { id: 'settings', label: 'Настройки' }].map(t => (
