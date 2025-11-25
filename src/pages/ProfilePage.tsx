@@ -938,8 +938,8 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-            <div className="grid gap-6 sticky top-24 self-start overflow-visible lg:z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 lg:gap-12 items-start">
+            <div className="grid gap-6 sticky top-24 self-start overflow-visible z-10">
               <div className="overflow-visible">
                 <Card className="overflow-visible">
                   <CardContent className="p-6 grid gap-4 overflow-visible">
