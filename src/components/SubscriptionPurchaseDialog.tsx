@@ -85,8 +85,24 @@ export default function SubscriptionPurchaseDialog({
 
       if (balanceError) throw balanceError;
 
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + plan.days);
+      const { data: existingSub } = await supabase
+        .from('recommendations_subscriptions')
+        .select('expires_at, is_active')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('expires_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let expiresAt: Date;
+
+      if (existingSub && new Date(existingSub.expires_at) > new Date()) {
+        expiresAt = new Date(existingSub.expires_at);
+        expiresAt.setDate(expiresAt.getDate() + plan.days);
+      } else {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + plan.days);
+      }
 
       const { error: subError } = await supabase
         .from('recommendations_subscriptions')

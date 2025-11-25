@@ -1100,22 +1100,27 @@ export default function ProfilePage() {
             <div className="grid gap-6 relative z-20">
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                    <div className="flex flex-wrap items-center gap-2 lg:flex-1">
-                      {[{ id: 'portfolio', label: 'Портфолио' }, { id: 'market', label: 'Биржа' }, { id: 'about', label: 'О себе' }, { id: 'reviews', label: 'Отзывы' }, { id: 'recommendations', label: 'Рекомендации' }, { id: 'settings', label: 'Настройки' }].map(t => (
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[{ id: 'portfolio', label: 'Портфолио' }, { id: 'market', label: 'Биржа' }, { id: 'about', label: 'О себе' }, { id: 'reviews', label: 'Отзывы' }, { id: 'settings', label: 'Настройки' }].map(t => (
                         <Button
                           key={t.id}
                           variant={tab === t.id ? 'default' : 'ghost'}
                           onClick={() => setTab(t.id)}
                           className="h-8 lg:h-9 px-3 lg:px-4 text-xs lg:text-sm flex-1 lg:flex-none min-w-0"
                         >
-                          {t.id === 'recommendations' && (
-                            <Sparkles className="h-3.5 w-3.5 lg:h-4 lg:w-4 mr-1" />
-                          )}
                           {t.label}
                         </Button>
                       ))}
                     </div>
+                    <Button
+                      variant={tab === 'recommendations' ? 'default' : 'ghost'}
+                      onClick={() => setTab('recommendations')}
+                      className="h-8 lg:h-9 px-3 lg:px-4 text-xs lg:text-sm bg-[#6FE7C8] hover:bg-[#5dd6b7] text-gray-900 font-medium"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 lg:h-4 lg:w-4 mr-1" />
+                      Рекомендации
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -52,13 +52,24 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { data: openOrders } = await supabase
+    const specialty = (profile.specialty || profile.category || "").toLowerCase();
+    const skills = Array.isArray(profile.skills) ? profile.skills.map((s: string) => s.toLowerCase()) : [];
+
+    console.log("User profile for search:", { specialty, skills: skills.slice(0, 5) });
+
+    let ordersQuery = supabase
       .from("orders")
       .select("id, title, description, price_min, price_max, tags, category, subcategory, created_at, user_id")
       .eq("status", "open")
-      .neq("user_id", user.id)
+      .neq("user_id", user.id);
+
+    if (specialty) {
+      ordersQuery = ordersQuery.or(`category.ilike.%${specialty}%,subcategory.ilike.%${specialty}%,title.ilike.%${specialty}%`);
+    }
+
+    const { data: openOrders } = await ordersQuery
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(200);
 
     console.log("Found open orders:", openOrders?.length || 0);
 
@@ -84,9 +95,6 @@ Deno.serve(async (req: Request) => {
 
     const totalDeals = userDeals?.length || 0;
     const avgRating = profile.rating || 0;
-
-    const specialty = (profile.specialty || profile.category || "").toLowerCase();
-    const skills = Array.isArray(profile.skills) ? profile.skills.map((s: string) => s.toLowerCase()) : [];
 
     console.log("User profile:", { specialty, skills, avgAmount, totalDeals, avgRating });
 
@@ -144,16 +152,33 @@ Deno.serve(async (req: Request) => {
         const titleLower = order.title.toLowerCase();
         const descLower = (order.description || "").toLowerCase();
         const tagsLower = orderTags.toLowerCase();
+        const categoryLower = (order.category || "").toLowerCase();
+        const subcategoryLower = (order.subcategory || "").toLowerCase();
 
         const matchingSkills = skills.filter((skill: string) =>
           titleLower.includes(skill) ||
           descLower.includes(skill) ||
-          tagsLower.includes(skill)
+          tagsLower.includes(skill) ||
+          categoryLower.includes(skill) ||
+          subcategoryLower.includes(skill)
         );
 
         if (matchingSkills.length > 0) {
-          score += 25;
-          reasons.push({ type: "skills", value: `Совпадают навыки: ${matchingSkills.join(", ")}` });
+          const skillScore = Math.min(40, matchingSkills.length * 10);
+          score += skillScore;
+          reasons.push({ type: "skills", value: `Совпадают навыки: ${matchingSkills.slice(0, 3).join(", ")}${matchingSkills.length > 3 ? ` и еще ${matchingSkills.length - 3}` : ""}` });
+        }
+      }
+
+      if (Array.isArray(order.tags) && order.tags.length > 0) {
+        const orderTagsLower = order.tags.map((t: string) => t.toLowerCase());
+        const matchingTags = orderTagsLower.filter((tag: string) =>
+          skills.some((skill: string) => tag.includes(skill) || skill.includes(tag))
+        );
+
+        if (matchingTags.length > 0 && !reasons.some(r => r.type === "skills")) {
+          score += 15;
+          reasons.push({ type: "tags", value: `Совпадают теги: ${matchingTags.slice(0, 3).join(", ")}` });
         }
       }
 
