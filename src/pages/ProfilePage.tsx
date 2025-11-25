@@ -27,7 +27,8 @@ interface Order {
   created_at: string;
   status: string;
   user_id: string;
-  views: number;
+  currency?: string;
+  engagement?: string;
 }
 
 interface Recommendation {
@@ -276,7 +277,9 @@ export default function ProfilePage() {
             subcategory,
             created_at,
             status,
-            user_id
+            user_id,
+            currency,
+            engagement
           )
         `)
         .eq('user_id', user.id)
@@ -1968,7 +1971,7 @@ export default function ProfilePage() {
                                       >
                                         <Card
                                           className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
-                                          onClick={() => window.location.hash = `#/orders/${order.id}`}
+                                          onClick={() => openPreview(order, 'order')}
                                         >
                                           <div className="absolute top-3 right-3 z-10">
                                             <Badge
@@ -2291,14 +2294,10 @@ export default function ProfilePage() {
               <>
                 <DialogHeader>
                   <DialogTitle data-wg-notranslate>{previewItem.title}</DialogTitle>
-                  <DialogDescription className="flex items-center gap-2 mt-2">
+                  <DialogDescription className="flex items-center gap-2 mt-2 flex-wrap">
                     <Badge variant="secondary">{previewItem.category}</Badge>
+                    {previewItem.subcategory && <Badge variant="outline">{previewItem.subcategory}</Badge>}
                     {previewType === 'order' && previewItem.engagement && <Badge variant="outline">{previewItem.engagement}</Badge>}
-                    {previewType === 'task' && previewItem.delivery_days && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {previewItem.delivery_days} дней
-                      </Badge>
-                    )}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4">
@@ -2306,45 +2305,42 @@ export default function ProfilePage() {
                     <div className="text-sm font-medium mb-2">Описание</div>
                     <p className="text-sm text-[#3F7F6E] leading-relaxed whitespace-pre-wrap" data-wg-notranslate>{previewItem.description}</p>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium mb-2">Теги</div>
-                    <div className="flex flex-wrap gap-2">
-                      {(previewItem.tags || []).map((t: string) => (
-                        <Badge key={t} variant="outline">{t}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  {previewType === 'task' && previewItem.features && (
+                  {previewItem.tags && previewItem.tags.length > 0 && (
                     <div>
-                      <div className="text-sm font-medium mb-2">Что входит</div>
-                      <ul className="list-disc list-inside text-sm text-[#3F7F6E]">
-                        {previewItem.features.map((f: string, i: number) => (
-                          <li key={i}>{f}</li>
+                      <div className="text-sm font-medium mb-2">Теги</div>
+                      <div className="flex flex-wrap gap-2">
+                        {previewItem.tags.map((t: string) => (
+                          <Badge key={t} variant="outline">{t}</Badge>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex items-center gap-3">
-                      {profile?.avatar ? (
-                        <img src={profile.avatar} alt={profile.name} className="h-10 w-10 rounded-full object-cover" />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-[#EFFFF8] flex items-center justify-center font-medium">
-                          {profile?.name?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-medium">{profile?.name || 'Пользователь'}</div>
-                        <div className="text-xs text-[#3F7F6E]">Опубликовано: {new Date(previewItem.created_at).toLocaleDateString()}</div>
-                      </div>
+                    <div className="text-xs text-gray-500">
+                      Опубликовано: {new Date(previewItem.created_at).toLocaleDateString('ru')}
                     </div>
-                    <div className="text-xl font-semibold text-[#6FE7C8]">
-                      {previewType === 'order' ? `${previewItem.currency} ${previewItem.price_min}–${previewItem.price_max}` : `${previewItem.currency} ${previewItem.price}`}
+                    <div className="text-xl">
+                      <PriceDisplay
+                        priceMin={previewItem.price_min}
+                        priceMax={previewItem.price_max}
+                        selectedRegion={selectedRegion}
+                      />
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={() => setPreviewOpen(false)}>Закрыть</Button>
+                  <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Закрыть</Button>
+                  {previewItem.user_id !== user?.id && (
+                    <Button
+                      onClick={() => {
+                        setPreviewOpen(false);
+                        handlePropose(previewItem.id);
+                      }}
+                      className="bg-[#6FE7C8] hover:bg-[#5dd6b7] text-gray-900"
+                    >
+                      Откликнуться
+                    </Button>
+                  )}
                 </DialogFooter>
               </>
             )}
