@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Eye, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart } from 'lucide-react';
+import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Eye, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart, RefreshCw, Award, DollarSign, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MediaEditor } from '@/components/MediaEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,40 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ProposalLimitIndicator } from '@/components/ui/ProposalLimitIndicator';
 import BuyProposalsDialog from '@/components/BuyProposalsDialog';
+import SubscriptionPurchaseDialog from '@/components/SubscriptionPurchaseDialog';
 import { getSupabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRegion } from '@/contexts/RegionContext';
+import PriceDisplay from '@/components/PriceDisplay';
+
+interface Order {
+  id: string;
+  title: string;
+  description: string;
+  price_min: number;
+  price_max: number;
+  tags: string[];
+  category: string;
+  subcategory: string;
+  created_at: string;
+  status: string;
+  user_id: string;
+  views: number;
+}
+
+interface Recommendation {
+  id: string;
+  order_id: string;
+  match_score: number;
+  match_reasons: Array<{ type: string; value: string }>;
+  order?: Order;
+}
+
+const ITEMS_PER_PAGE = 21;
 
 export default function ProfilePage() {
   const { user, updateUserEmail } = useAuth();
+  const { selectedRegion } = useRegion();
   const supabase = getSupabase();
   const [tab, setTab] = useState('portfolio');
 
@@ -59,6 +88,14 @@ export default function ProfilePage() {
   const [newEmail, setNewEmail] = useState('');
   const [proposalLimitData, setProposalLimitData] = useState<{ used: number; monthStart: string; purchased: number } | null>(null);
   const [buyProposalsDialogOpen, setBuyProposalsDialogOpen] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState(0);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [insufficientProfile, setInsufficientProfile] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [profile, setProfile] = useState(() => {
     const raw = typeof window !== 'undefined' && localStorage.getItem('fh_profile');
     return raw ? JSON.parse(raw) : {
@@ -89,6 +126,12 @@ export default function ProfilePage() {
       loadTabData();
     }
   }, [tab]);
+
+  useEffect(() => {
+    if (user && tab === 'recommendations') {
+      checkSubscriptionStatus();
+    }
+  }, [tab, user]);
 
   const checkAuthProvider = async () => {
     if (!user) return;
@@ -166,7 +209,133 @@ export default function ProfilePage() {
       await loadPortfolioProjects();
     } else if (tab === 'reviews' && reviews.length === 0) {
       await loadReviews();
+    } else if (tab === 'recommendations') {
+      await checkSubscriptionStatus();
     }
+  };
+
+  const checkSubscriptionStatus = async () => {
+    if (!user) return;
+
+    setLoadingRecommendations(true);
+    try {
+      const { data: hasActiveSub } = await supabase.rpc('has_active_recommendations_subscription', {
+        p_user_id: user.id,
+      });
+
+      setHasSubscription(hasActiveSub || false);
+
+      if (hasActiveSub) {
+        const { data: days } = await supabase.rpc('get_subscription_days_remaining', {
+          p_user_id: user.id,
+        });
+        setDaysRemaining(days || 0);
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('skills, specialty')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const skills = profileData?.skills || [];
+        const specialty = profileData?.specialty;
+
+        if (skills.length < 6 || !specialty) {
+          setInsufficientProfile(true);
+        } else {
+          setInsufficientProfile(false);
+          await loadRecommendations();
+        }
+      }
+    } catch (err) {
+      console.error('Error checking subscription:', err);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  const loadRecommendations = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('order_recommendations')
+        .select(`
+          id,
+          order_id,
+          match_score,
+          match_reasons,
+          order:orders (
+            id,
+            title,
+            description,
+            price_min,
+            price_max,
+            tags,
+            category,
+            subcategory,
+            created_at,
+            status,
+            user_id,
+            views
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('is_visible', true)
+        .order('match_score', { ascending: false });
+
+      if (error) throw error;
+
+      const validRecommendations = (data || []).filter(
+        (rec: any) => rec.order && rec.order.status === 'open'
+      );
+
+      setRecommendations(validRecommendations);
+    } catch (err) {
+      console.error('Error loading recommendations:', err);
+    }
+  };
+
+  const generateRecommendations = async () => {
+    if (!user || !hasSubscription) return;
+
+    setGenerating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-order-recommendations`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate recommendations');
+      }
+
+      await loadRecommendations();
+    } catch (err: any) {
+      console.error('Error generating recommendations:', err);
+      alert('Ошибка при генерации рекомендаций: ' + err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSubscriptionSuccess = async () => {
+    setShowSubscriptionDialog(false);
+    await checkSubscriptionStatus();
+  };
+
+  const handlePropose = (orderId: string) => {
+    window.location.hash = `#/proposals/create?orderId=${orderId}`;
   };
 
   const loadUserProfile = async () => {
@@ -931,23 +1100,20 @@ export default function ProfilePage() {
                 <CardContent className="p-3 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2">
                     <div className="flex flex-wrap items-center gap-2 lg:flex-1">
-                      {[{ id: 'portfolio', label: 'Портфолио' }, { id: 'market', label: 'Биржа' }, { id: 'about', label: 'О себе' }, { id: 'reviews', label: 'Отзывы' }, { id: 'settings', label: 'Настройки' }].map(t => (
+                      {[{ id: 'portfolio', label: 'Портфолио' }, { id: 'market', label: 'Биржа' }, { id: 'about', label: 'О себе' }, { id: 'reviews', label: 'Отзывы' }, { id: 'recommendations', label: 'Рекомендации' }, { id: 'settings', label: 'Настройки' }].map(t => (
                         <Button
                           key={t.id}
                           variant={tab === t.id ? 'default' : 'ghost'}
                           onClick={() => setTab(t.id)}
                           className="h-8 lg:h-9 px-3 lg:px-4 text-xs lg:text-sm flex-1 lg:flex-none min-w-0"
                         >
+                          {t.id === 'recommendations' && (
+                            <Sparkles className="h-3.5 w-3.5 lg:h-4 lg:w-4 mr-1" />
+                          )}
                           {t.label}
                         </Button>
                       ))}
                     </div>
-                    <Button asChild variant="outline" className="border-[#3F7F6E] text-[#3F7F6E] hover:bg-[#3F7F6E]/5 h-8 lg:h-9 px-3 lg:px-4 text-xs lg:text-sm w-full lg:w-auto">
-                      <a href="#/recommendations" className="flex items-center justify-center gap-2">
-                        <Sparkles className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                        Рекомендации заказов
-                      </a>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1585,6 +1751,374 @@ export default function ProfilePage() {
                     </motion.div>
                   )}
 
+                  {tab === 'recommendations' && (
+                    <motion.div
+                      key="recommendations"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    >
+                      {loadingRecommendations ? (
+                        <Card>
+                          <CardContent className="p-12 text-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-[#6FE7C8] mx-auto mb-4" />
+                            <p className="text-gray-600">Загрузка...</p>
+                          </CardContent>
+                        </Card>
+                      ) : !hasSubscription ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-gradient-to-br from-[#3F7F6E] to-[#2F6F5E] rounded-2xl p-8 text-white shadow-xl"
+                        >
+                          <div className="flex items-start gap-4 mb-6">
+                            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                              <Sparkles className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                              <h1 className="text-3xl font-bold mb-2">AI Рекомендации заказов</h1>
+                              <p className="text-white/90 text-lg">
+                                Получайте персональный подбор заказов на основе вашего профиля
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/10 rounded-xl p-6 mb-6">
+                            <h3 className="font-semibold text-lg mb-4">Что вы получите:</h3>
+                            <ul className="space-y-3">
+                              <li className="flex items-start gap-3">
+                                <Award className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                <span>AI анализирует вашу специальность, навыки, опыт и рейтинг</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                <Tag className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                <span>Персональный подбор открытых заказов с высоким совпадением</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                <DollarSign className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                <span>Заказы соответствующие вашему бюджету и опыту</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                <RefreshCw className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                <span>Автоматическое обновление списка рекомендаций</span>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <Button
+                            onClick={() => setShowSubscriptionDialog(true)}
+                            className="w-full h-14 text-lg bg-white text-[#3F7F6E] hover:bg-gray-100"
+                          >
+                            Купить подписку на рекомендации
+                          </Button>
+                        </motion.div>
+                      ) : insufficientProfile ? (
+                        <div>
+                          <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-r from-[#3F7F6E] to-[#2F6F5E] rounded-xl p-4 mb-6 text-white"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Award className="w-6 h-6" />
+                                <div>
+                                  <p className="font-semibold">Активная подписка на рекомендации</p>
+                                  <p className="text-sm text-white/80">Осталось дней: {daysRemaining}</p>
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => setShowSubscriptionDialog(true)}
+                                variant="outline"
+                                className="bg-white/20 border-white/30 hover:bg-white/30 text-white"
+                              >
+                                Продлить подписку
+                              </Button>
+                            </div>
+                          </motion.div>
+
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-xl p-8 shadow-lg border-2 border-orange-200"
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <AlertCircle className="w-6 h-6 text-orange-600" />
+                              </div>
+                              <div className="flex-1">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                                  Вы указали недостаточно информации о себе в профиле
+                                </h2>
+                                <p className="text-gray-600 mb-6">
+                                  Для генерации персональных рекомендаций необходимо:
+                                </p>
+                                <ul className="space-y-2 mb-6">
+                                  <li className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${profile?.skills?.length >= 6 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                    <span className="text-gray-700">
+                                      Минимум 6 тегов (указано: {profile?.skills?.length || 0})
+                                    </span>
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${profile?.role ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                    <span className="text-gray-700">
+                                      Специальность {profile?.role ? '(указана)' : '(не указана)'}
+                                    </span>
+                                  </li>
+                                </ul>
+                                <Button
+                                  onClick={() => setTab('edit')}
+                                  className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
+                                >
+                                  Заполнить профиль
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </div>
+                      ) : (
+                        <div>
+                          <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-r from-[#3F7F6E] to-[#2F6F5E] rounded-xl p-4 mb-6 text-white"
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <Award className="w-6 h-6" />
+                                <div>
+                                  <p className="font-semibold">Активная подписка на рекомендации</p>
+                                  <p className="text-sm text-white/80">Осталось дней: {daysRemaining}</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={generateRecommendations}
+                                  disabled={generating}
+                                  className="bg-white/20 border border-white/30 hover:bg-white/30 text-white"
+                                >
+                                  <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
+                                  {generating ? 'Генерация...' : 'Обновить'}
+                                </Button>
+                                <Button
+                                  onClick={() => setShowSubscriptionDialog(true)}
+                                  variant="outline"
+                                  className="bg-white/20 border-white/30 hover:bg-white/30 text-white"
+                                >
+                                  Продлить
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.div>
+
+                          <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Рекомендации для вас</h2>
+                            <p className="text-gray-600">
+                              AI подобрал {recommendations.length} заказов на основе вашего профиля
+                            </p>
+                          </div>
+
+                          {recommendations.length === 0 ? (
+                            <Card>
+                              <CardContent className="p-12 text-center">
+                                <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                  Пока нет рекомендаций
+                                </h3>
+                                <p className="text-gray-600 mb-6">
+                                  Нажмите кнопку "Обновить" чтобы AI подобрал заказы для вас
+                                </p>
+                                <Button
+                                  onClick={generateRecommendations}
+                                  disabled={generating}
+                                  className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
+                                >
+                                  <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
+                                  {generating ? 'Генерация...' : 'Сгенерировать рекомендации'}
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                                {(() => {
+                                  const totalPages = Math.ceil(recommendations.length / ITEMS_PER_PAGE);
+                                  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                                  const endIndex = startIndex + ITEMS_PER_PAGE;
+                                  const currentRecommendations = recommendations.slice(startIndex, endIndex);
+
+                                  return currentRecommendations.map((rec, index) => {
+                                    const order = rec.order;
+                                    if (!order) return null;
+
+                                    return (
+                                      <motion.div
+                                        key={rec.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white rounded-xl p-5 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+                                      >
+                                        <div className="flex items-center justify-between mb-3">
+                                          <Badge
+                                            className={`${
+                                              rec.match_score >= 80
+                                                ? 'bg-green-100 text-green-800'
+                                                : rec.match_score >= 60
+                                                ? 'bg-blue-100 text-blue-800'
+                                                : 'bg-gray-100 text-gray-800'
+                                            }`}
+                                          >
+                                            Совпадение {rec.match_score}%
+                                          </Badge>
+                                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(order.created_at).toLocaleDateString('ru')}
+                                          </span>
+                                        </div>
+
+                                        <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+                                          {order.title}
+                                        </h3>
+
+                                        <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                                          {order.description}
+                                        </p>
+
+                                        <div className="mb-3">
+                                          <PriceDisplay
+                                            priceMin={order.price_min}
+                                            priceMax={order.price_max}
+                                            selectedRegion={selectedRegion}
+                                          />
+                                        </div>
+
+                                        {rec.match_reasons && rec.match_reasons.length > 0 && (
+                                          <div className="mb-4 space-y-1">
+                                            {rec.match_reasons.slice(0, 2).map((reason, idx) => (
+                                              <div key={idx} className="flex items-start gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
+                                                <p className="text-xs text-gray-600">{reason.value}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        {order.tags && order.tags.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mb-4">
+                                            {order.tags.slice(0, 3).map((tag, idx) => (
+                                              <span
+                                                key={idx}
+                                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                                              >
+                                                {tag}
+                                              </span>
+                                            ))}
+                                            {order.tags.length > 3 && (
+                                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                                +{order.tags.length - 3}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        <div className="flex gap-2">
+                                          <Button
+                                            onClick={() => handlePropose(order.id)}
+                                            className="flex-1 bg-[#3F7F6E] hover:bg-[#2F6F5E] text-sm h-9"
+                                          >
+                                            Откликнуться
+                                          </Button>
+                                          <Button
+                                            onClick={() => window.location.hash = `#/orders/${order.id}`}
+                                            variant="outline"
+                                            className="h-9 px-3"
+                                          >
+                                            <ExternalLink className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                      </motion.div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+
+                              {(() => {
+                                const totalPages = Math.ceil(recommendations.length / ITEMS_PER_PAGE);
+                                if (totalPages <= 1) return null;
+
+                                return (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Button
+                                      onClick={() => {
+                                        setCurrentPage(currentPage - 1);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      }}
+                                      disabled={currentPage === 1}
+                                      variant="outline"
+                                      className="h-10"
+                                    >
+                                      <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+
+                                    <div className="flex gap-1">
+                                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                        if (
+                                          page === 1 ||
+                                          page === totalPages ||
+                                          (page >= currentPage - 1 && page <= currentPage + 1)
+                                        ) {
+                                          return (
+                                            <Button
+                                              key={page}
+                                              onClick={() => {
+                                                setCurrentPage(page);
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                              }}
+                                              variant={currentPage === page ? 'default' : 'outline'}
+                                              className={`h-10 w-10 ${
+                                                currentPage === page
+                                                  ? 'bg-[#3F7F6E] hover:bg-[#2F6F5E]'
+                                                  : ''
+                                              }`}
+                                            >
+                                              {page}
+                                            </Button>
+                                          );
+                                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                                          return (
+                                            <span key={page} className="flex items-center px-2">
+                                              ...
+                                            </span>
+                                          );
+                                        }
+                                        return null;
+                                      })}
+                                    </div>
+
+                                    <Button
+                                      onClick={() => {
+                                        setCurrentPage(currentPage + 1);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      }}
+                                      disabled={currentPage === totalPages}
+                                      variant="outline"
+                                      className="h-10"
+                                    >
+                                      <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
                   {tab === 'settings' && (
                     <motion.div
                       key="settings"
@@ -1908,6 +2442,12 @@ export default function ProfilePage() {
         open={buyProposalsDialogOpen}
         onClose={() => setBuyProposalsDialogOpen(false)}
         onSuccess={loadProposalLimits}
+      />
+
+      <SubscriptionPurchaseDialog
+        isOpen={showSubscriptionDialog}
+        onClose={() => setShowSubscriptionDialog(false)}
+        onSuccess={handleSubscriptionSuccess}
       />
     </div>
   );
