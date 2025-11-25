@@ -770,7 +770,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6 items-start">
-            <div className="grid gap-4 lg:gap-6">
+            <div className="grid gap-4 lg:gap-6 lg:sticky lg:top-20 lg:self-start">
               <Card>
                 <CardContent className="p-4 lg:p-6 grid gap-3 lg:gap-4">
                   <div className="flex items-center gap-3">
@@ -854,7 +854,7 @@ export default function ProfilePage() {
                 <div className="hidden lg:block">
                   <ProposalLimitIndicator
                     used={proposalLimitData.used}
-                    max={50}
+                    max={90}
                     purchased={proposalLimitData.purchased}
                     type="orders"
                     onBuyMore={() => setBuyProposalsDialogOpen(true)}
