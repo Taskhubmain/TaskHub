@@ -166,16 +166,16 @@ function Hero() {
               className="grid grid-cols-2 gap-4"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://s.iimg.su/s/25/th_gqedYIDxrt9VXzKzj6hd1b4KLEhcHToNhmlMKnqT.jpg" alt="" className="h-full w-full object-cover" />
+                <img src="https://s3.radikal.cloud/2025/11/25/pexels-photo-318436048cfdfa8637815a6.jpeg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://s.iimg.su/s/25/th_gHOlDERxNEpdXl7l7FvKBviWB2Gf6ZHBt3K28zzM.jpg" alt="" className="h-full w-full object-cover" />
+                <img src="https://radika1.link/2025/11/25/pexels-photo-31842927c2fc12b32e1cfbb.jpeg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://s.iimg.su/s/25/th_gMvHztDxJwvAaLEc2ziyahbv7cQ9NhTvCgNBzKUt.jpg" alt="" className="h-full w-full object-cover" />
+                <img src="https://radika1.link/2025/11/25/pexels-photo-31844650c40bb78c5ce8a1c.jpeg" alt="" className="h-full w-full object-cover" />
               </div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-                <img src="https://s.iimg.su/s/25/th_g2RG8lCx2otSnqdg6vvk1FjmQI6Yz4p7UXL8p1Sd.jpg" alt="" className="h-full w-full object-cover" />
+                <img src="https://s3.radikal.cloud/2025/11/25/pexels-photo-31842964336e49aea304cd7.jpeg" alt="" className="h-full w-full object-cover" />
               </div>
             </motion.div>
           </div>
@@ -361,16 +361,16 @@ function About() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://s.iimg.su/s/25/th_gernCMixXSjhdc4ehQbm33qcp4PQkFaC7WpTB0rq.jpg" alt="" className="h-full w-full object-cover" />
+            <img src="https://s1.radikal.cloud/2025/11/25/pexels-photo-3184357a617b841f212244a.jpeg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://s.iimg.su/s/25/th_gjxjvv8xzhyNB0sAdYiEkKOz6lf82HMbeAvWu19W.jpg" alt="" className="h-full w-full object-cover" />
+            <img src="https://s1.radikal.cloud/2025/11/25/pexels-photo-3184639ba13ac1fcf2b040c.jpeg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://s.iimg.su/s/25/th_g5hxx8gxzdg0QRXH0rUoXTG6OyB3tV8WBqblzsk0.jpg" alt="" className="h-full w-full object-cover" />
+            <img src="https://s3.radikal.cloud/2025/11/25/pexels-photo-3182773c51d516ae6341e35.jpeg" alt="" className="h-full w-full object-cover" />
           </div>
           <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
-            <img src="https://s.iimg.su/s/25/th_g49TGDWxY9YMCkgOyAEsoCjrWUaC9CplfCYEtVuC.jpg" alt="" className="h-full w-full object-cover" />
+            <img src="https://s1.radikal.cloud/2025/11/25/pexels-photo-3184325fc75296fa6c64105.jpeg" alt="" className="h-full w-full object-cover" />
           </div>
         </div>
       </div>
