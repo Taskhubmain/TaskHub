@@ -470,9 +470,10 @@ export default function RecommendationsPage() {
                       {/* Price */}
                       <div className="mb-3">
                         <PriceDisplay
-                          priceMin={order.price_min}
-                          priceMax={order.price_max}
-                          selectedRegion={selectedRegion}
+                          amount={order.price_min}
+                          maxAmount={order.price_max}
+                          showRange={true}
+                          fromCurrency="USD"
                         />
                       </div>
 
