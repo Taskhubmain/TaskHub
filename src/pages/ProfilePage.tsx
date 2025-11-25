@@ -939,7 +939,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 lg:gap-6 items-start">
-            <div className="grid gap-4 lg:gap-6 lg:sticky lg:top-20 lg:self-start">
+            <div className="grid gap-4 lg:gap-6 lg:sticky lg:top-20 lg:self-start lg:z-10">
               <Card>
                 <CardContent className="p-4 lg:p-6 grid gap-3 lg:gap-4">
                   <div className="flex items-center gap-3">
@@ -1006,7 +1006,7 @@ export default function ProfilePage() {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -5 }}
-                            className="absolute left-0 top-full mt-2 bg-[#3F7F6E] text-white px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 text-sm whitespace-nowrap z-10"
+                            className="absolute left-0 top-full mt-2 bg-[#3F7F6E] text-white px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 text-sm whitespace-nowrap z-50"
                           >
                             <Check className="h-4 w-4" />
                             Скопировано
@@ -1095,7 +1095,7 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            <div className="grid gap-4 lg:gap-6">
+            <div className="grid gap-4 lg:gap-6 relative z-20">
               <Card>
                 <CardContent className="p-3 lg:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2">
