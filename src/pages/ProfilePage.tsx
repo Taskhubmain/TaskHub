@@ -276,8 +276,7 @@ export default function ProfilePage() {
             subcategory,
             created_at,
             status,
-            user_id,
-            views
+            user_id
           )
         `)
         .eq('user_id', user.id)
@@ -1963,89 +1962,74 @@ export default function ProfilePage() {
                                     return (
                                       <motion.div
                                         key={rec.id}
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="bg-white rounded-xl p-5 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+                                        transition={{ delay: index * 0.03 }}
                                       >
-                                        <div className="flex items-center justify-between mb-3">
-                                          <Badge
-                                            className={`${
-                                              rec.match_score >= 80
-                                                ? 'bg-green-100 text-green-800'
-                                                : rec.match_score >= 60
-                                                ? 'bg-blue-100 text-blue-800'
-                                                : 'bg-gray-100 text-gray-800'
-                                            }`}
-                                          >
-                                            Совпадение {rec.match_score}%
-                                          </Badge>
-                                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(order.created_at).toLocaleDateString('ru')}
-                                          </span>
-                                        </div>
-
-                                        <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
-                                          {order.title}
-                                        </h3>
-
-                                        <p className="text-sm text-gray-600 mb-3 line-clamp-3">
-                                          {order.description}
-                                        </p>
-
-                                        <div className="mb-3">
-                                          <PriceDisplay
-                                            priceMin={order.price_min}
-                                            priceMax={order.price_max}
-                                            selectedRegion={selectedRegion}
-                                          />
-                                        </div>
-
-                                        {rec.match_reasons && rec.match_reasons.length > 0 && (
-                                          <div className="mb-4 space-y-1">
-                                            {rec.match_reasons.slice(0, 2).map((reason, idx) => (
-                                              <div key={idx} className="flex items-start gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
-                                                <p className="text-xs text-gray-600">{reason.value}</p>
+                                        <Card
+                                          className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
+                                          onClick={() => window.location.hash = `#/orders/${order.id}`}
+                                        >
+                                          <div className="absolute top-3 right-3 z-10">
+                                            <Badge
+                                              className={`${
+                                                rec.match_score >= 80
+                                                  ? 'bg-green-100 text-green-800 border-green-300'
+                                                  : rec.match_score >= 60
+                                                  ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                                  : 'bg-gray-100 text-gray-800 border-gray-300'
+                                              }`}
+                                            >
+                                              {rec.match_score}%
+                                            </Badge>
+                                          </div>
+                                          <CardHeader className="pb-3">
+                                            <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
+                                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                              <Badge variant="secondary">{order.category}</Badge>
+                                              {order.subcategory && <Badge variant="outline">{order.subcategory}</Badge>}
+                                            </div>
+                                          </CardHeader>
+                                          <CardContent className="flex-1 px-6">
+                                            {order.tags && order.tags.length > 0 && (
+                                              <div className="flex flex-wrap gap-2 mb-3">
+                                                {order.tags.slice(0, 3).map((tag: string, idx: number) => (
+                                                  <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                                                ))}
+                                                {order.tags.length > 3 && (
+                                                  <Badge variant="outline" className="text-xs">+{order.tags.length - 3}</Badge>
+                                                )}
                                               </div>
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        {order.tags && order.tags.length > 0 && (
-                                          <div className="flex flex-wrap gap-1 mb-4">
-                                            {order.tags.slice(0, 3).map((tag, idx) => (
-                                              <span
-                                                key={idx}
-                                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
-                                              >
-                                                {tag}
-                                              </span>
-                                            ))}
-                                            {order.tags.length > 3 && (
-                                              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                                +{order.tags.length - 3}
-                                              </span>
                                             )}
+                                            <div className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{order.description}</div>
+                                            {rec.match_reasons && rec.match_reasons.length > 0 && (
+                                              <div className="space-y-1 mb-3">
+                                                {rec.match_reasons.slice(0, 2).map((reason: any, idx: number) => (
+                                                  <div key={idx} className="flex items-start gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#6FE7C8] mt-1.5 flex-shrink-0"></div>
+                                                    <p className="text-xs text-gray-600">{reason.value}</p>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </CardContent>
+                                          <div className="flex items-center justify-between px-6 py-4 border-t">
+                                            <PriceDisplay
+                                              priceMin={order.price_min}
+                                              priceMax={order.price_max}
+                                              selectedRegion={selectedRegion}
+                                            />
+                                            <Button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePropose(order.id);
+                                              }}
+                                              className="bg-[#6FE7C8] hover:bg-[#5dd6b7] text-gray-900 text-sm h-9 px-4"
+                                            >
+                                              Откликнуться
+                                            </Button>
                                           </div>
-                                        )}
-
-                                        <div className="flex gap-2">
-                                          <Button
-                                            onClick={() => handlePropose(order.id)}
-                                            className="flex-1 bg-[#3F7F6E] hover:bg-[#2F6F5E] text-sm h-9"
-                                          >
-                                            Откликнуться
-                                          </Button>
-                                          <Button
-                                            onClick={() => window.location.hash = `#/orders/${order.id}`}
-                                            variant="outline"
-                                            className="h-9 px-3"
-                                          >
-                                            <ExternalLink className="w-4 h-4" />
-                                          </Button>
-                                        </div>
+                                        </Card>
                                       </motion.div>
                                     );
                                   });
