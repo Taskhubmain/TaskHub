@@ -119,17 +119,11 @@ export default function SubscriptionPurchaseDialog({
 
       console.log('[SubscriptionPurchase] Purchase completed successfully');
 
-      // Show success message
-      alert(`Подписка успешно активирована на ${plan.days} дней!`);
-
       // Wait a bit to ensure DB writes are committed
       await new Promise(resolve => setTimeout(resolve, 500));
 
       onSuccess();
       onClose();
-
-      // Force reload to update subscription status
-      window.location.reload();
     } catch (err: any) {
       console.error('Purchase error:', err);
       setError(err.message || 'Ошибка при покупке подписки');

@@ -183,10 +183,10 @@ export default function RecommendationsPage() {
     window.location.hash = `#/proposals/create?orderId=${orderId}`;
   };
 
-  const handleSubscriptionSuccess = () => {
+  const handleSubscriptionSuccess = async () => {
     setShowPurchaseDialog(false);
-    // Reload page to update subscription status
-    window.location.reload();
+    // Reload profile to check subscription status
+    await loadProfile();
   };
 
   // Pagination
