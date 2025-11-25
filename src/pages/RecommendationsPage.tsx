@@ -66,12 +66,14 @@ export default function RecommendationsPage() {
 
       if (profileError) throw profileError;
       setProfile(profileData);
+      console.log('Profile loaded:', profileData);
 
       // Check subscription status
       const { data: hasActiveSub } = await supabase.rpc('has_active_recommendations_subscription', {
         p_user_id: user.id,
       });
 
+      console.log('Has active subscription:', hasActiveSub);
       setHasSubscription(hasActiveSub || false);
 
       if (hasActiveSub) {
@@ -79,18 +81,25 @@ export default function RecommendationsPage() {
           p_user_id: user.id,
         });
         setDaysRemaining(days || 0);
+        console.log('Days remaining:', days);
 
         // Check if profile has sufficient info
         const skills = profileData?.skills || [];
         const specialty = profileData?.specialty;
 
+        console.log('Skills count:', skills.length, 'Specialty:', specialty);
+
         if (skills.length < 6 || !specialty) {
+          console.log('Insufficient profile info');
           setInsufficientProfile(true);
         } else {
+          console.log('Profile sufficient, loading recommendations');
           setInsufficientProfile(false);
           // Load recommendations
           await loadRecommendations();
         }
+      } else {
+        console.log('No active subscription');
       }
     } catch (err) {
       console.error('Error loading profile:', err);
@@ -101,6 +110,8 @@ export default function RecommendationsPage() {
 
   const loadRecommendations = async () => {
     if (!user) return;
+
+    console.log('Starting to load recommendations for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -122,7 +133,7 @@ export default function RecommendationsPage() {
             created_at,
             status,
             user_id,
-            views
+            views_count
           )
         `)
         .eq('user_id', user.id)
@@ -160,7 +171,7 @@ export default function RecommendationsPage() {
               created_at: orderData.created_at,
               status: orderData.status,
               user_id: orderData.user_id,
-              views: orderData.views || 0
+              views: orderData.views_count || 0
             }
           };
         });
