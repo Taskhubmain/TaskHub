@@ -34,6 +34,7 @@ interface Task {
 }
 
 interface Profile {
+  id: string;
   name: string;
   avatar_url: string | null;
   email: string;
@@ -237,7 +238,7 @@ export default function TaskDetailPage() {
                         </Button>
                         {profile && (
                           <Button asChild variant="outline">
-                            <a href={`#/messages?to=${profile.email}`}>
+                            <a href={`#/messages?to=${profile.id}`}>
                               <MessageCircle className="h-4 w-4 mr-2" />
                               Написать
                             </a>
@@ -272,7 +273,7 @@ export default function TaskDetailPage() {
                   </div>
                   {profile && (
                     <Button variant="secondary" className="w-full" asChild>
-                      <a href={`#/messages?to=${profile.email}`}>Написать сообщение</a>
+                      <a href={`#/messages?to=${profile.id}`}>Написать сообщение</a>
                     </Button>
                   )}
                 </CardContent>

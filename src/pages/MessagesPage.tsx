@@ -356,7 +356,77 @@ export default function MessagesPage() {
 
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const chatId = params.get('chat');
-    if (chatId) setSelectedChatId(chatId);
+    const toUserId = params.get('to');
+
+    if (chatId) {
+      setSelectedChatId(chatId);
+    } else if (toUserId && user) {
+      // Найти или создать чат с пользователем
+      (async () => {
+        try {
+          const supabase = getSupabase();
+
+          // Ищем существующий чат между пользователями
+          const { data: existingChats } = await supabase
+            .from('chats')
+            .select('id')
+            .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${toUserId}),and(participant1_id.eq.${toUserId},participant2_id.eq.${user.id})`);
+
+          if (existingChats && existingChats.length > 0) {
+            // Если есть несколько чатов, берем первый (общий чат, не чат сделки)
+            // Нужно отфильтровать чаты сделок
+            const { data: dealChatsData } = await supabase
+              .from('deals')
+              .select('chat_id')
+              .or(`and(client_id.eq.${user.id},freelancer_id.eq.${toUserId}),and(client_id.eq.${toUserId},freelancer_id.eq.${user.id})`);
+
+            const dealChatIds = new Set((dealChatsData || []).map(d => d.chat_id));
+            const generalChat = existingChats.find(chat => !dealChatIds.has(chat.id));
+
+            if (generalChat) {
+              setSelectedChatId(generalChat.id);
+              setShowChatOnMobile(true);
+            } else {
+              // Все чаты - это чаты сделок, создаем общий чат
+              const { data: newChat, error } = await supabase
+                .from('chats')
+                .insert({
+                  participant1_id: user.id,
+                  participant2_id: toUserId
+                })
+                .select()
+                .single();
+
+              if (!error && newChat) {
+                setSelectedChatId(newChat.id);
+                setShowChatOnMobile(true);
+                // Перезагружаем чаты чтобы новый чат появился в списке
+                await loadChats();
+              }
+            }
+          } else {
+            // Чата нет, создаем новый
+            const { data: newChat, error } = await supabase
+              .from('chats')
+              .insert({
+                participant1_id: user.id,
+                participant2_id: toUserId
+              })
+              .select()
+              .single();
+
+            if (!error && newChat) {
+              setSelectedChatId(newChat.id);
+              setShowChatOnMobile(true);
+              // Перезагружаем чаты чтобы новый чат появился в списке
+              await loadChats();
+            }
+          }
+        } catch (error) {
+          console.error('Error creating/finding chat:', error);
+        }
+      })();
+    }
 
     const handleBeforeUnload = () => updateOnlineStatus(false);
     window.addEventListener('beforeunload', handleBeforeUnload);
