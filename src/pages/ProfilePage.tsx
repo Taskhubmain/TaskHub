@@ -39,7 +39,7 @@ interface Recommendation {
   order?: Order;
 }
 
-const ITEMS_PER_PAGE = 21;
+const ITEMS_PER_PAGE = 6;
 
 export default function ProfilePage() {
   const { user, updateUserEmail } = useAuth();
