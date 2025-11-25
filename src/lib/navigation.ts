@@ -7,7 +7,7 @@ export const navigateToProfile = (userId: string, currentUserId: string | undefi
   if (!userId) return;
 
   if (userId === currentUserId) {
-    navigate('/profile');
+    navigate('/me');
   } else {
     // Use username if provided, otherwise use UUID
     const identifier = username || userId;

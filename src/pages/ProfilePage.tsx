@@ -952,7 +952,7 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              <div className="relative">
+              <div>
                 <AnimatePresence initial={false} mode="wait">
                   {tab === 'portfolio' && (
                     <motion.div
