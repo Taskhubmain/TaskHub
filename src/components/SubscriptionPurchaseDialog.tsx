@@ -105,9 +105,9 @@ export default function SubscriptionPurchaseDialog({
         .insert({
           user_id: user.id,
           kind: 'purchase',
-          status: 'completed',
+          status: 'succeeded',
           amount_minor: plan.priceUSD * 100,
-          currency: 'USD',
+          currency: 'usd',
           metadata: {
             plan_type: selectedPlan,
             days: plan.days,
@@ -127,6 +127,9 @@ export default function SubscriptionPurchaseDialog({
 
       onSuccess();
       onClose();
+
+      // Force reload to update subscription status
+      window.location.reload();
     } catch (err: any) {
       console.error('Purchase error:', err);
       setError(err.message || 'Ошибка при покупке подписки');
