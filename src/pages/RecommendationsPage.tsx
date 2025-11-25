@@ -1,30 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, Calendar, TrendingUp, Lock, Award, AlertCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertCircle, Clock, ChevronLeft, ChevronRight, Award, ExternalLink, Calendar, DollarSign, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRegion } from '@/contexts/RegionContext';
 import PriceDisplay from '@/components/PriceDisplay';
 import SubscriptionPurchaseDialog from '@/components/SubscriptionPurchaseDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-
-interface Recommendation {
-  id: string;
-  order_id: string;
-  match_score: number;
-  match_reasons: Array<{ type: string; value: string }>;
-  order: {
-    id: string;
-    title: string;
-    description: string;
-    price_min: number;
-    price_max: number;
-    tags: string[];
-    created_at: string;
-    status: string;
-  };
-}
 
 interface Order {
   id: string;
@@ -33,27 +16,36 @@ interface Order {
   price_min: number;
   price_max: number;
   tags: string[];
+  category: string;
+  subcategory: string;
   created_at: string;
   status: string;
+  user_id: string;
+  views: number;
 }
+
+interface Recommendation {
+  id: string;
+  order_id: string;
+  match_score: number;
+  match_reasons: Array<{ type: string; value: string }>;
+  order?: Order;
+}
+
+const ITEMS_PER_PAGE = 21;
 
 export default function RecommendationsPage() {
   const { user } = useAuth();
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const { selectedRegion } = useRegion();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [generalOrders, setGeneralOrders] = useState<Order[]>([]);
-  const [skillsWarning, setSkillsWarning] = useState('');
-  const [specialtyWarning, setSpecialtyWarning] = useState('');
-  const [showingFallbackOrders, setShowingFallbackOrders] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewItem, setPreviewItem] = useState<any>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [insufficientProfile, setInsufficientProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -61,23 +53,10 @@ export default function RecommendationsPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (hasSubscription !== null && profile) {
-      if (hasSubscription) {
-        // Auto-generate recommendations on page entry
-        console.log('[RecommendationsPage] Subscription active, generating recommendations');
-        generateRecommendations();
-      } else {
-        console.log('[RecommendationsPage] No subscription, loading general orders');
-        loadGeneralOrders();
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSubscription, profile]);
-
   const loadProfile = async () => {
     if (!user) return;
 
+    setLoading(true);
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -88,59 +67,35 @@ export default function RecommendationsPage() {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      const skills = profileData?.skills || [];
-      if (skills.length === 0) {
-        setSkillsWarning('У вас мало навыков, попробуйте добавить больше!');
-      } else if (skills.length < 8) {
-        setSkillsWarning('У вас мало навыков, попробуйте добавить больше!');
-      }
-
-      if (!profileData?.specialty && !profileData?.category) {
-        setSpecialtyWarning('Укажите специальность для точных рекомендаций!');
-      }
-
-      const { data, error } = await supabase.rpc('has_active_recommendations_subscription', {
+      // Check subscription status
+      const { data: hasActiveSub } = await supabase.rpc('has_active_recommendations_subscription', {
         p_user_id: user.id,
       });
 
-      if (error) throw error;
+      setHasSubscription(hasActiveSub || false);
 
-      console.log('[RecommendationsPage] Subscription status:', data);
-      setHasSubscription(data || false);
-
-      if (data) {
+      if (hasActiveSub) {
         const { data: days } = await supabase.rpc('get_subscription_days_remaining', {
           p_user_id: user.id,
         });
-        console.log('[RecommendationsPage] Days remaining:', days);
         setDaysRemaining(days || 0);
+
+        // Check if profile has sufficient info
+        const skills = profileData?.skills || [];
+        const specialty = profileData?.specialty;
+
+        if (skills.length < 6 || !specialty) {
+          setInsufficientProfile(true);
+        } else {
+          setInsufficientProfile(false);
+          // Load recommendations
+          await loadRecommendations();
+        }
       }
     } catch (err) {
       console.error('Error loading profile:', err);
-      setHasSubscription(false);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadGeneralOrders = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id, title, description, price_min, price_max, tags, created_at, status')
-        .eq('status', 'open')
-        .neq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      const shuffled = (data || []).sort(() => Math.random() - 0.5).slice(0, 20);
-      setGeneralOrders(shuffled);
-    } catch (err) {
-      console.error('Error loading general orders:', err);
     }
   };
 
@@ -148,7 +103,6 @@ export default function RecommendationsPage() {
     if (!user) return;
 
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('order_recommendations')
         .select(`
@@ -163,8 +117,12 @@ export default function RecommendationsPage() {
             price_min,
             price_max,
             tags,
+            category,
+            subcategory,
             created_at,
-            status
+            status,
+            user_id,
+            views
           )
         `)
         .eq('user_id', user.id)
@@ -173,110 +131,22 @@ export default function RecommendationsPage() {
 
       if (error) throw error;
 
-      const validRecommendations = (data || []).filter(rec => rec.order && rec.order.id);
+      // Filter out orders that are not open
+      const validRecommendations = (data || []).filter(
+        (rec: any) => rec.order && rec.order.status === 'open'
+      );
 
-      if (validRecommendations.length === 0) {
-        console.log('No AI recommendations found, loading fallback');
-        setShowingFallbackOrders(true);
-        await loadFallbackOrders();
-      } else {
-        setShowingFallbackOrders(false);
-        setRecommendations(validRecommendations);
-      }
+      setRecommendations(validRecommendations);
     } catch (err) {
       console.error('Error loading recommendations:', err);
-      setShowingFallbackOrders(true);
-      await loadFallbackOrders();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFallbackOrders = async () => {
-    if (!user || !profile) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id, title, description, price_min, price_max, tags, created_at, status')
-        .eq('status', 'open')
-        .neq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-
-      let filteredOrders = data || [];
-      const skills = profile?.skills || [];
-      const specialty = profile?.specialty || '';
-
-      console.log('Profile data:', { skills, specialty });
-      console.log('Total orders fetched:', filteredOrders.length);
-
-      if (skills.length > 0 || specialty.length > 0) {
-        const skillsLower = skills.map((s: string) => s.toLowerCase());
-        const specialtyLower = specialty.toLowerCase();
-
-        const matchedOrders = filteredOrders.filter(order => {
-          const titleLower = order.title.toLowerCase();
-          const descLower = (order.description || '').toLowerCase();
-          const tagsLower = (order.tags || []).map((t: string) => t.toLowerCase()).join(' ');
-          const searchText = `${titleLower} ${descLower} ${tagsLower}`;
-
-          const skillMatch = skillsLower.some((skill: string) => searchText.includes(skill));
-          const specialtyMatch = specialtyLower && searchText.includes(specialtyLower);
-
-          return skillMatch || specialtyMatch;
-        });
-
-        console.log('Matched orders:', matchedOrders.length);
-
-        if (matchedOrders.length > 0) {
-          filteredOrders = matchedOrders;
-        }
-      }
-
-      const shuffled = filteredOrders.sort(() => Math.random() - 0.5).slice(0, 20);
-
-      const formattedOrders = shuffled.map(order => {
-        const titleLower = order.title.toLowerCase();
-        const descLower = (order.description || '').toLowerCase();
-        const tagsLower = (order.tags || []).map((t: string) => t.toLowerCase()).join(' ');
-        const searchText = `${titleLower} ${descLower} ${tagsLower}`;
-
-        let matchScore = 40;
-        const matchingSkills = skillsLower.filter((skill: string) => searchText.includes(skill));
-        const matchesSpecialty = specialtyLower && searchText.includes(specialtyLower);
-
-        if (matchingSkills.length > 0) {
-          matchScore += Math.min(40, matchingSkills.length * 10);
-        }
-        if (matchesSpecialty) {
-          matchScore += 20;
-        }
-
-        return {
-          id: crypto.randomUUID(),
-          order_id: order.id,
-          match_score: Math.min(100, matchScore),
-          match_reasons: [],
-          order: order
-        };
-      });
-
-      setRecommendations(formattedOrders);
-    } catch (err) {
-      console.error('Error loading fallback orders:', err);
     }
   };
 
   const generateRecommendations = async () => {
     if (!user || !hasSubscription) return;
 
+    setGenerating(true);
     try {
-      setGenerating(true);
-      console.log('Generating recommendations for user:', user.id);
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
@@ -291,492 +161,437 @@ export default function RecommendationsPage() {
         }
       );
 
-      const result = await response.json();
-      console.log('Generation result:', result);
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate recommendations');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate recommendations');
       }
 
-      if (result.count === 0) {
-        console.log('No recommendations generated by AI, loading fallback');
-        setShowingFallbackOrders(true);
-        await loadFallbackOrders();
-      } else {
-        await loadRecommendations();
-      }
+      const result = await response.json();
+      console.log('Generated recommendations:', result.count);
+
+      // Reload recommendations
+      await loadRecommendations();
     } catch (err: any) {
       console.error('Error generating recommendations:', err);
-      alert(err.message || 'Ошибка при генерации рекомендаций');
+      alert('Ошибка при генерации рекомендаций: ' + err.message);
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleSubscriptionSuccess = async () => {
-    setShowPurchaseDialog(false);
-    console.log('[RecommendationsPage] Purchase success, reloading profile...');
-    // Reload profile to get updated subscription status
-    setLoading(true);
-    await loadProfile();
-    // The useEffect will automatically trigger generateRecommendations when hasSubscription changes
-    console.log('[RecommendationsPage] Profile reloaded');
+  const handlePropose = (orderId: string) => {
+    window.location.hash = `#/proposals/create?orderId=${orderId}`;
   };
 
-  const paginatedRecommendations = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return recommendations.slice(startIndex, endIndex);
-  }, [recommendations, currentPage]);
+  const handleSubscriptionSuccess = () => {
+    setShowPurchaseDialog(false);
+    // Reload page to update subscription status
+    window.location.reload();
+  };
 
+  // Pagination
   const totalPages = Math.ceil(recommendations.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentRecommendations = recommendations.slice(startIndex, endIndex);
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (!user) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Войдите, чтобы увидеть рекомендации</p>
-          <Button asChild>
-            <a href="#/login">Войти</a>
-          </Button>
+          <div className="animate-spin h-8 w-8 border-4 border-[#6FE7C8] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка...</p>
         </div>
       </div>
     );
   }
 
-  if (hasSubscription === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-[#3F7F6E]" />
-      </div>
-    );
-  }
-
+  // NO SUBSCRIPTION VIEW
   if (!hasSubscription) {
     return (
-      <>
-        {(skillsWarning || specialtyWarning) && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 mx-4 mt-4 rounded-lg">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-yellow-700 break-words">
-                  {skillsWarning && <span>{skillsWarning}</span>}
-                  {skillsWarning && specialtyWarning && <span className="mx-1">•</span>}
-                  {specialtyWarning && <span>{specialtyWarning}</span>}
+      <div className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-[#3F7F6E] to-[#2F6F5E] rounded-2xl p-8 text-white shadow-xl"
+          >
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-2">AI Рекомендации заказов</h1>
+                <p className="text-white/90 text-lg">
+                  Получайте персональный подбор заказов на основе вашего профиля
                 </p>
               </div>
             </div>
-          </div>
-        )}
 
-        {specialtyWarning && generalOrders.length > 0 ? (
-          <div className="min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-              <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                <h1 className="text-2xl font-bold mb-2">Общие рекомендации</h1>
-                <p className="text-gray-600">
-                  Кажется для вас нет ничего подходящего, но возможно эти объявления вам подойдут
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                {generalOrders.map((order) => (
-                  <a
-                    key={order.id}
-                    href={`#/orders/${order.id}`}
-                    className="block bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <h3 className="text-lg font-semibold mb-2">{order.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                      {order.description}
-                    </p>
-                    <div className="text-xl font-bold text-[#3F7F6E]">
-                      <PriceDisplay amount={order.price_min} />
-                      {order.price_max > order.price_min && (
-                        <span className="text-gray-500"> - <PriceDisplay amount={order.price_max} /></span>
-                      )}
-                    </div>
-                  </a>
-                ))}
-              </div>
-
-              <div className="mt-8 bg-gradient-to-r from-[#3F7F6E]/10 to-[#2F6F5E]/10 rounded-2xl p-8 text-center">
-                <h2 className="text-xl font-bold mb-4">Хотите персональные рекомендации?</h2>
-                <p className="text-gray-600 mb-6">
-                  Укажите специальность и подключите AI-рекомендации для точного подбора заказов
-                </p>
-                <div className="flex gap-4 justify-center flex-wrap">
-                  <Button asChild variant="outline">
-                    <a href="#/profile">Заполнить профиль</a>
-                  </Button>
-                  <Button
-                    onClick={() => setShowPurchaseDialog(true)}
-                    className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Подключить рекомендации
-                  </Button>
-                </div>
-              </div>
+            <div className="bg-white/10 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-lg mb-4">Что вы получите:</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <Award className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <span>AI анализирует вашу специальность, навыки, опыт и рейтинг</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Tag className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <span>Персональный подбор открытых заказов с высоким совпадением</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <DollarSign className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <span>Заказы соответствующие вашему бюджету и опыту</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <RefreshCw className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <span>Автоматическое обновление списка рекомендаций</span>
+                </li>
+              </ul>
             </div>
 
-            <SubscriptionPurchaseDialog
-              isOpen={showPurchaseDialog}
-              onClose={() => setShowPurchaseDialog(false)}
-              onSuccess={handleSubscriptionSuccess}
-            />
-          </div>
-        ) : (
-          <div className="min-h-screen bg-gray-50">
-            <div className="max-w-4xl mx-auto px-4 py-12">
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-[#3F7F6E] to-[#2F6F5E] px-8 py-12 text-center text-white">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 mb-6">
-                    <Sparkles className="w-10 h-10" />
-                  </div>
-                  <h1 className="text-3xl font-bold mb-4">Рекомендации заказов с AI</h1>
-                  <p className="text-lg text-white/90 max-w-2xl mx-auto">
-                    Персональный подбор заказов на основе анализа ваших навыков, опыта и предпочтений
-                  </p>
-                </div>
+            <Button
+              onClick={() => setShowPurchaseDialog(true)}
+              className="w-full h-14 text-lg bg-white text-[#3F7F6E] hover:bg-gray-100"
+            >
+              Купить подписку на рекомендации
+            </Button>
+          </motion.div>
 
-                <div className="p-8 space-y-8">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#3F7F6E]/10 flex items-center justify-center flex-shrink-0">
-                        <TrendingUp className="w-6 h-6 text-[#3F7F6E]" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Умный анализ</h3>
-                        <p className="text-sm text-gray-600">
-                          AI анализирует ваш профиль, навыки, средний чек и историю работ
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#3F7F6E]/10 flex items-center justify-center flex-shrink-0">
-                        <Award className="w-6 h-6 text-[#3F7F6E]" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Высокое соответствие</h3>
-                        <p className="text-sm text-gray-600">
-                          Получайте только те заказы, которые идеально подходят вам
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#3F7F6E]/10 flex items-center justify-center flex-shrink-0">
-                        <RefreshCw className="w-6 h-6 text-[#3F7F6E]" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Автообновление</h3>
-                        <p className="text-sm text-gray-600">
-                          Список рекомендаций обновляется автоматически
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#3F7F6E]/10 flex items-center justify-center flex-shrink-0">
-                        <Lock className="w-6 h-6 text-[#3F7F6E]" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-2">Актуальность</h3>
-                        <p className="text-sm text-gray-600">
-                          Недоступные заказы автоматически убираются из списка
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-center pt-8 border-t">
-                    <Button
-                      onClick={() => setShowPurchaseDialog(true)}
-                      size="lg"
-                      className="h-14 px-12 text-lg bg-[#3F7F6E] hover:bg-[#2F6F5E]"
-                    >
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Подключить рекомендации
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <SubscriptionPurchaseDialog
-              isOpen={showPurchaseDialog}
-              onClose={() => setShowPurchaseDialog(false)}
-              onSuccess={handleSubscriptionSuccess}
-            />
-          </div>
-        )}
-      </>
+          <SubscriptionPurchaseDialog
+            isOpen={showPurchaseDialog}
+            onClose={() => setShowPurchaseDialog(false)}
+            onSuccess={handleSubscriptionSuccess}
+          />
+        </div>
+      </div>
     );
   }
 
-  const pageVariants = {
-    initial: { opacity: 0, y: 16 },
-    in: { opacity: 1, y: 0 },
-    out: { opacity: 0, y: -16 }
-  };
-
-  const pageTransition = { type: 'spring' as const, stiffness: 140, damping: 20, mass: 0.9 };
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key="recommendations"
-        initial="initial"
-        animate="in"
-        exit="out"
-        variants={pageVariants}
-        transition={pageTransition}
-        className="min-h-screen bg-gray-50"
-      >
-      {(skillsWarning || specialtyWarning) && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-4 mt-4 rounded-lg">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-yellow-700 break-words">
-                {skillsWarning && <span>{skillsWarning}</span>}
-                {skillsWarning && specialtyWarning && <span className="mx-1">•</span>}
-                {specialtyWarning && <span>{specialtyWarning}</span>}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold mb-2">Рекомендации заказов</h1>
-              <p className="text-gray-600">
-                {showingFallbackOrders
-                  ? `Мы нашли для вас следующие объявления`
-                  : `AI подобрал для вас ${recommendations.length} подходящих заказов`
-                }
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-r from-[#3F7F6E]/10 to-[#2F6F5E]/10 rounded-lg px-4 py-3">
-                <div className="flex items-center gap-2 text-[#3F7F6E] mb-1">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-medium">Подписка активна</span>
-                </div>
-                <div className="text-xs text-gray-600">
-                  Осталось дней: <span className="font-semibold">{daysRemaining}</span>
-                </div>
-                <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-[#3F7F6E] h-full transition-all rounded-full"
-                    style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }}
-                  />
+  // INSUFFICIENT PROFILE VIEW
+  if (insufficientProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          {/* Subscription Status Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-[#3F7F6E] to-[#2F6F5E] rounded-xl p-4 mb-6 text-white"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Award className="w-6 h-6" />
+                <div>
+                  <p className="font-semibold">Активная подписка на рекомендации</p>
+                  <p className="text-sm text-white/80">Осталось дней: {daysRemaining}</p>
                 </div>
               </div>
+              <Button
+                onClick={() => setShowPurchaseDialog(true)}
+                variant="outline"
+                className="bg-white/20 border-white/30 hover:bg-white/30 text-white"
+              >
+                Продлить подписку
+              </Button>
+            </div>
+          </motion.div>
 
+          {/* Insufficient Profile Warning */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl p-8 shadow-lg border-2 border-orange-200"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  Вы указали недостаточно информации о себе в профиле
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Для генерации персональных рекомендаций необходимо:
+                </p>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${profile?.skills?.length >= 6 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-gray-700">
+                      Минимум 6 тегов (указано: {profile?.skills?.length || 0})
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${profile?.specialty ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-gray-700">
+                      Специальность {profile?.specialty ? '(указана)' : '(не указана)'}
+                    </span>
+                  </li>
+                </ul>
+                <Button
+                  onClick={() => window.location.hash = '#/me/profile'}
+                  className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
+                >
+                  Заполнить профиль
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          <SubscriptionPurchaseDialog
+            isOpen={showPurchaseDialog}
+            onClose={() => setShowPurchaseDialog(false)}
+            onSuccess={handleSubscriptionSuccess}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // RECOMMENDATIONS VIEW
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#EFFFF8]/30 to-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Subscription Status Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#3F7F6E] to-[#2F6F5E] rounded-xl p-4 mb-6 text-white"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Award className="w-6 h-6" />
+              <div>
+                <p className="font-semibold">Активная подписка на рекомендации</p>
+                <p className="text-sm text-white/80">Осталось дней: {daysRemaining}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
               <Button
                 onClick={generateRecommendations}
                 disabled={generating}
-                className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
+                className="bg-white/20 border border-white/30 hover:bg-white/30 text-white"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
-                {generating ? 'Обновление...' : 'Обновить'}
+                {generating ? 'Генерация...' : 'Обновить рекомендации'}
+              </Button>
+              <Button
+                onClick={() => setShowPurchaseDialog(true)}
+                variant="outline"
+                className="bg-white/20 border-white/30 hover:bg-white/30 text-white"
+              >
+                Продлить подписку
               </Button>
             </div>
           </div>
+        </motion.div>
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Рекомендации для вас</h1>
+          <p className="text-gray-600">
+            AI подобрал {recommendations.length} заказов на основе вашего профиля
+          </p>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-[#3F7F6E]" />
-            <p className="text-gray-600 mt-4">Загрузка рекомендаций...</p>
-          </div>
-        ) : recommendations.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        {/* Recommendations Grid */}
+        {recommendations.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white rounded-xl p-12 text-center shadow-lg"
+          >
             <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Пока нет рекомендаций</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Пока нет рекомендаций
+            </h3>
             <p className="text-gray-600 mb-6">
-              Нажмите "Обновить", чтобы получить персональные рекомендации заказов
+              Нажмите кнопку "Обновить рекомендации" чтобы AI подобрал заказы для вас
             </p>
-            <Button onClick={generateRecommendations} disabled={generating}>
+            <Button
+              onClick={generateRecommendations}
+              disabled={generating}
+              className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
+            >
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
-              Сгенерировать рекомендации
+              {generating ? 'Генерация...' : 'Сгенерировать рекомендации'}
             </Button>
-          </div>
+          </motion.div>
         ) : (
           <>
-            <div className="grid gap-4">
-              {paginatedRecommendations.map((rec) => (
-              <div
-                key={rec.id}
-                onClick={() => {
-                  setPreviewItem(rec.order);
-                  setPreviewOpen(true);
-                }}
-                className="block bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{rec.order.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                      {rec.order.description}
-                    </p>
-                  </div>
-                  <div className="ml-4 flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-semibold text-green-700">
-                        {rec.match_score}% совпадение
-                      </span>
-                    </div>
-                    <div className="text-xl font-bold text-[#3F7F6E]">
-                      <PriceDisplay amount={rec.order.price_min} />
-                      {rec.order.price_max > rec.order.price_min && (
-                        <span className="text-gray-500"> - <PriceDisplay amount={rec.order.price_max} /></span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <AnimatePresence>
+                {currentRecommendations.map((rec, index) => {
+                  const order = rec.order;
+                  if (!order) return null;
 
-                {rec.match_reasons && rec.match_reasons.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {rec.match_reasons.map((reason, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-[#3F7F6E]/10 text-[#3F7F6E] px-3 py-1 rounded-full text-xs font-medium"
-                      >
-                        {reason.value}
+                  return (
+                    <motion.div
+                      key={rec.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white rounded-xl p-5 shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+                    >
+                      {/* Match Score Badge */}
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge
+                          className={`${
+                            rec.match_score >= 80
+                              ? 'bg-green-100 text-green-800'
+                              : rec.match_score >= 60
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          Совпадение {rec.match_score}%
+                        </Badge>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(order.created_at).toLocaleDateString('ru')}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+
+                      {/* Order Title */}
+                      <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+                        {order.title}
+                      </h3>
+
+                      {/* Order Description */}
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                        {order.description}
+                      </p>
+
+                      {/* Price */}
+                      <div className="mb-3">
+                        <PriceDisplay
+                          priceMin={order.price_min}
+                          priceMax={order.price_max}
+                          selectedRegion={selectedRegion}
+                        />
+                      </div>
+
+                      {/* Match Reasons */}
+                      {rec.match_reasons && rec.match_reasons.length > 0 && (
+                        <div className="mb-4 space-y-1">
+                          {rec.match_reasons.slice(0, 2).map((reason, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
+                              <p className="text-xs text-gray-600">{reason.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {order.tags && order.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {order.tags.slice(0, 3).map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {order.tags.length > 3 && (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              +{order.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handlePropose(order.id)}
+                          className="flex-1 bg-[#3F7F6E] hover:bg-[#2F6F5E] text-sm h-9"
+                        >
+                          Откликнуться
+                        </Button>
+                        <Button
+                          onClick={() => window.location.hash = `#/orders/${order.id}`}
+                          variant="outline"
+                          className="h-9 px-3"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
 
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8 px-4">
+              <div className="flex items-center justify-center gap-2">
                 <Button
-                  variant="outline"
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="h-10 w-10 p-0"
-                >
-                  &lt;
-                </Button>
-                {(() => {
-                  const pages: number[] = [];
-
-                  if (currentPage === 1) {
-                    pages.push(1);
-                    if (totalPages >= 2) pages.push(2);
-                    if (totalPages >= 3) pages.push(3);
-                  } else if (currentPage === totalPages) {
-                    if (totalPages >= 3) pages.push(totalPages - 2);
-                    if (totalPages >= 2) pages.push(totalPages - 1);
-                    pages.push(totalPages);
-                  } else {
-                    pages.push(currentPage - 1);
-                    pages.push(currentPage);
-                    if (currentPage + 1 <= totalPages) pages.push(currentPage + 1);
-                  }
-
-                  return pages.map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? 'default' : 'outline'}
-                      onClick={() => goToPage(page)}
-                      className={`h-10 w-10 p-0 ${
-                        currentPage === page
-                          ? 'bg-[#3F7F6E] text-white hover:bg-[#2F6F5E]'
-                          : ''
-                      }`}
-                    >
-                      {page}
-                    </Button>
-                  ));
-                })()}
-                <Button
                   variant="outline"
+                  className="h-10"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <Button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          className={`h-10 w-10 ${
+                            currentPage === page
+                              ? 'bg-[#3F7F6E] hover:bg-[#2F6F5E]'
+                              : ''
+                          }`}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="flex items-center px-2">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <Button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="h-10 w-10 p-0"
+                  variant="outline"
+                  className="h-10"
                 >
-                  &gt;
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
           </>
         )}
-      </div>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl">
-          {previewItem && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{previewItem.title}</DialogTitle>
-                <DialogDescription className="flex items-center gap-2 mt-2 flex-wrap">
-                  <Badge variant="secondary">{previewItem.category || 'Разработка'}</Badge>
-                  {previewItem.subcategory && <Badge variant="outline">{previewItem.subcategory}</Badge>}
-                  {previewItem.engagement && <Badge variant="outline">{previewItem.engagement}</Badge>}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <div>
-                  <div className="text-sm font-medium mb-2">Описание</div>
-                  <p className="text-sm text-[#3F7F6E]">{previewItem.description}</p>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">Теги</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(previewItem.tags || []).map((t: string) => (
-                      <Badge key={t} variant="outline">{t}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t">
-                  <div>
-                    <div className="text-sm text-gray-500">Бюджет</div>
-                    <div className="text-2xl font-bold text-[#3F7F6E]">
-                      <PriceDisplay amount={previewItem.price_min} currency={previewItem.currency} />
-                      {previewItem.price_max > previewItem.price_min && (
-                        <span> - <PriceDisplay amount={previewItem.price_max} currency={previewItem.currency} /></span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-                  Закрыть
-                </Button>
-                <Button
-                  onClick={() => {
-                    window.location.hash = `/proposals/create?orderId=${previewItem.id}&fromRecommendation=true`;
-                  }}
-                  className="bg-[#3F7F6E] hover:bg-[#2F6F5E]"
-                >
-                  Откликнуться
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-      </motion.div>
-    </AnimatePresence>
+        <SubscriptionPurchaseDialog
+          isOpen={showPurchaseDialog}
+          onClose={() => setShowPurchaseDialog(false)}
+          onSuccess={handleSubscriptionSuccess}
+        />
+      </div>
+    </div>
   );
 }
