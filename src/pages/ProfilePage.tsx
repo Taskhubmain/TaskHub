@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ProposalLimitIndicator } from '@/components/ui/ProposalLimitIndicator';
-import SubscriptionPurchaseDialog from '@/components/SubscriptionPurchaseDialog';
+import BuyProposalsDialog from '@/components/BuyProposalsDialog';
 import { getSupabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -1904,8 +1904,8 @@ export default function ProfilePage() {
         <MediaEditor file={fileToEdit} onSave={handleMediaSave} onCancel={handleMediaCancel} />
       )}
 
-      <SubscriptionPurchaseDialog
-        isOpen={buyProposalsDialogOpen}
+      <BuyProposalsDialog
+        open={buyProposalsDialogOpen}
         onClose={() => setBuyProposalsDialogOpen(false)}
         onSuccess={loadProposalLimits}
       />
