@@ -110,7 +110,7 @@ export default function RecommendationsPage() {
           order_id,
           match_score,
           match_reasons,
-          order:orders (
+          orders!inner (
             id,
             title,
             description,
@@ -127,14 +127,19 @@ export default function RecommendationsPage() {
         `)
         .eq('user_id', user.id)
         .eq('is_visible', true)
+        .eq('orders.status', 'open')
         .order('match_score', { ascending: false });
 
       if (error) throw error;
 
-      // Filter out orders that are not open
-      const validRecommendations = (data || []).filter(
-        (rec: any) => rec.order && rec.order.status === 'open'
-      );
+      // Map the data to the expected format
+      const validRecommendations = (data || []).map((rec: any) => ({
+        id: rec.id,
+        order_id: rec.order_id,
+        match_score: rec.match_score,
+        match_reasons: rec.match_reasons,
+        order: rec.orders
+      }));
 
       setRecommendations(validRecommendations);
     } catch (err) {
