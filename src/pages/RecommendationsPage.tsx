@@ -132,15 +132,40 @@ export default function RecommendationsPage() {
 
       if (error) throw error;
 
-      // Map the data to the expected format
-      const validRecommendations = (data || []).map((rec: any) => ({
-        id: rec.id,
-        order_id: rec.order_id,
-        match_score: rec.match_score,
-        match_reasons: rec.match_reasons,
-        order: rec.orders
-      }));
+      console.log('Raw recommendations data:', data);
 
+      // Map the data to the expected format
+      // orders!inner returns the joined data as an object, not an array
+      const validRecommendations = (data || [])
+        .filter((rec: any) => rec.orders && typeof rec.orders === 'object')
+        .map((rec: any) => {
+          const orderData = rec.orders;
+          console.log('Order data:', orderData);
+          console.log('price_min:', orderData.price_min, 'price_max:', orderData.price_max);
+
+          return {
+            id: rec.id,
+            order_id: rec.order_id,
+            match_score: rec.match_score,
+            match_reasons: rec.match_reasons,
+            order: {
+              id: orderData.id,
+              title: orderData.title,
+              description: orderData.description,
+              price_min: orderData.price_min,
+              price_max: orderData.price_max,
+              tags: orderData.tags || [],
+              category: orderData.category,
+              subcategory: orderData.subcategory,
+              created_at: orderData.created_at,
+              status: orderData.status,
+              user_id: orderData.user_id,
+              views: orderData.views || 0
+            }
+          };
+        });
+
+      console.log('Mapped recommendations:', validRecommendations);
       setRecommendations(validRecommendations);
     } catch (err) {
       console.error('Error loading recommendations:', err);
@@ -474,12 +499,19 @@ export default function RecommendationsPage() {
 
                       {/* Price */}
                       <div className="mb-3">
-                        <PriceDisplay
-                          amount={order.price_min}
-                          maxAmount={order.price_max}
-                          showRange={true}
-                          fromCurrency="USD"
-                        />
+                        {(() => {
+                          console.log('Rendering price for order:', order.id);
+                          console.log('price_min:', order.price_min, typeof order.price_min);
+                          console.log('price_max:', order.price_max, typeof order.price_max);
+                          return (
+                            <PriceDisplay
+                              amount={order.price_min}
+                              maxAmount={order.price_max}
+                              showRange={true}
+                              fromCurrency="USD"
+                            />
+                          );
+                        })()}
                       </div>
 
                       {/* Match Reasons */}
