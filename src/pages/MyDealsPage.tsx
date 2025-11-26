@@ -4,7 +4,6 @@ import {
   Plus,
   Package,
   ListTodo,
-  Eye,
   MessageSquare,
   Edit,
   Trash2,
@@ -567,10 +566,6 @@ export default function MyDealsPage() {
                       <div className="flex flex-col xs-375:flex-row xs-375:justify-between xs-375:items-center gap-2 xs-375:gap-4 text-sm xs-375:text-base mb-3">
                         <div className="flex gap-4 xs-375:gap-5">
                           <div className="flex items-center gap-1.5 text-[#3F7F6E]">
-                            <Eye className="h-4 w-4 xs-375:h-5 xs-375:w-5" />
-                            <span className="font-medium">{order.views_count || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[#3F7F6E]">
                             <MessageSquare className="h-4 w-4 xs-375:h-5 xs-375:w-5" />
                             <span className="font-medium">
                               {proposals[order.id]?.length || 0}
@@ -617,12 +612,6 @@ export default function MyDealsPage() {
                             {order.description}
                           </p>
                           <div className="flex items-center flex-wrap gap-5 text-sm text-[#3F7F6E]">
-                            <div className="flex items-center gap-1.5">
-                              <Eye className="h-4 w-4" />
-                              <span className="font-medium">
-                                {order.views_count || 0}
-                              </span>
-                            </div>
                             <div className="flex items-center gap-1.5">
                               <MessageSquare className="h-4 w-4" />
                               <span className="font-medium">
@@ -955,10 +944,6 @@ export default function MyDealsPage() {
                       <div className="flex flex-col xs-375:flex-row xs-375:justify-between xs-375:items-center gap-2 xs-375:gap-4 text-sm xs-375:text-base mb-3">
                         <div className="flex gap-4 xs-375:gap-5">
                           <div className="flex items-center gap-1.5 text-[#3F7F6E]">
-                            <Eye className="h-4 w-4 xs-375:h-5 xs-375:w-5" />
-                            <span className="font-medium">{task.views_count || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[#3F7F6E]">
                             <MessageSquare className="h-4 w-4 xs-375:h-5 xs-375:w-5" />
                             <span className="font-medium">
                               {proposals[task.id]?.length || 0}
@@ -1003,12 +988,6 @@ export default function MyDealsPage() {
                             {task.description}
                           </p>
                           <div className="flex items-center flex-wrap gap-5 text-sm text-[#3F7F6E]">
-                            <div className="flex items-center gap-1.5">
-                              <Eye className="h-4 w-4" />
-                              <span className="font-medium">
-                                {task.views_count || 0}
-                              </span>
-                            </div>
                             <div className="flex items-center gap-1.5">
                               <MessageSquare className="h-4 w-4" />
                               <span className="font-medium">

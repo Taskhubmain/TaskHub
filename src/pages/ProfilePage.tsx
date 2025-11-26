@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Eye, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart, RefreshCw, Award, DollarSign, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart, RefreshCw, Award, DollarSign, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MediaEditor } from '@/components/MediaEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1253,10 +1253,6 @@ export default function ProfilePage() {
                                     <span>{new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    <Eye className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{order.views_count || 0}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
                                     <Heart className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                                     <span>{order.likes_count || 0}</span>
                                   </div>
@@ -1322,10 +1318,6 @@ export default function ProfilePage() {
                                   <div className="flex items-center gap-1.5">
                                     <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                                     <span>{new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <Eye className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{task.views_count || 0}</span>
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <Heart className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
