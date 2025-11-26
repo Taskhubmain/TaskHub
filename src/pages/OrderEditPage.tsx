@@ -63,7 +63,7 @@ export default function OrderEditPage() {
     }
 
     try {
-      const { data: orderData, error } = await supabase
+      const { data: orderData, error } = await getSupabase()
         .from('orders')
         .select('*')
         .eq('id', orderId)
@@ -71,14 +71,14 @@ export default function OrderEditPage() {
 
       if (error || !orderData) {
         alert('Заказ не найден');
-        window.location.hash = '#/my-deals';
+        window.location.hash = '#/my-orders';
         return;
       }
 
       const { data: { user: authUser } } = await getSupabase().auth.getUser();
       if (authUser?.id !== orderData.user_id) {
         alert('У вас нет прав для редактирования этого заказа');
-        window.location.hash = '#/my-deals';
+        window.location.hash = '#/my-orders';
         return;
       }
 

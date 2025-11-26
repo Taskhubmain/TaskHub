@@ -67,13 +67,15 @@ export default function MyOrdersPage() {
     try {
       const { error } = await getSupabase()
         .from('orders')
-        .update({ status: 'paused' })
+        .update({ status: 'paused', updated_at: new Date().toISOString() })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'paused' } : o));
-      alert('Заказ приостановлен');
+      // Немедленно обновляем UI
+      setOrders(prev => prev.map(o =>
+        o.id === orderId ? { ...o, status: 'paused' } : o
+      ));
     } catch (error) {
       console.error('Error pausing order:', error);
       alert('Ошибка при приостановке заказа');
@@ -84,13 +86,15 @@ export default function MyOrdersPage() {
     try {
       const { error } = await getSupabase()
         .from('orders')
-        .update({ status: 'open' })
+        .update({ status: 'open', updated_at: new Date().toISOString() })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'open' } : o));
-      alert('Заказ возобновлён');
+      // Немедленно обновляем UI
+      setOrders(prev => prev.map(o =>
+        o.id === orderId ? { ...o, status: 'open' } : o
+      ));
     } catch (error) {
       console.error('Error resuming order:', error);
       alert('Ошибка при возобновлении заказа');
@@ -157,7 +161,7 @@ export default function MyOrdersPage() {
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant="secondary">{order.category}</Badge>
                         <Badge variant={order.status === 'open' ? 'default' : 'outline'}>
-                          {order.status === 'open' ? 'Открыт' : order.status === 'in_progress' ? 'В работе' : order.status === 'completed' ? 'Завершён' : 'Отменён'}
+                          {order.status === 'open' ? 'Открыт' : order.status === 'in_progress' ? 'В работе' : order.status === 'completed' ? 'Завершён' : order.status === 'paused' ? 'Приостановлен' : order.status === 'cancelled' ? 'Отменён' : order.status}
                         </Badge>
                         {order.is_boosted && (
                           <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">

@@ -70,7 +70,7 @@ export default function TaskEditPage() {
     }
 
     try {
-      const { data: taskData, error } = await supabase
+      const { data: taskData, error } = await getSupabase()
         .from('tasks')
         .select('*')
         .eq('id', taskId)
@@ -78,14 +78,14 @@ export default function TaskEditPage() {
 
       if (error || !taskData) {
         alert('Объявление не найдено');
-        window.location.hash = '#/my-deals';
+        window.location.hash = '#/my-tasks';
         return;
       }
 
       const { data: { user: authUser } } = await getSupabase().auth.getUser();
       if (authUser?.id !== taskData.user_id) {
         alert('У вас нет прав для редактирования этого объявления');
-        window.location.hash = '#/my-deals';
+        window.location.hash = '#/my-tasks';
         return;
       }
 

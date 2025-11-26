@@ -67,13 +67,15 @@ export default function MyTasksPage() {
     try {
       const { error } = await getSupabase()
         .from('tasks')
-        .update({ status: 'paused' })
+        .update({ status: 'paused', updated_at: new Date().toISOString() })
         .eq('id', taskId);
 
       if (error) throw error;
 
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'paused' } : t));
-      alert('Объявление приостановлено');
+      // Немедленно обновляем UI
+      setTasks(prev => prev.map(t =>
+        t.id === taskId ? { ...t, status: 'paused' } : t
+      ));
     } catch (error) {
       console.error('Error pausing task:', error);
       alert('Ошибка при приостановке объявления');
@@ -84,13 +86,15 @@ export default function MyTasksPage() {
     try {
       const { error } = await getSupabase()
         .from('tasks')
-        .update({ status: 'active' })
+        .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', taskId);
 
       if (error) throw error;
 
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'active' } : t));
-      alert('Объявление возобновлено');
+      // Немедленно обновляем UI
+      setTasks(prev => prev.map(t =>
+        t.id === taskId ? { ...t, status: 'active' } : t
+      ));
     } catch (error) {
       console.error('Error resuming task:', error);
       alert('Ошибка при возобновлении объявления');
