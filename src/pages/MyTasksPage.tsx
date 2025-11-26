@@ -72,10 +72,8 @@ export default function MyTasksPage() {
 
       if (error) throw error;
 
-      // Немедленно обновляем UI
-      setTasks(prev => prev.map(t =>
-        t.id === taskId ? { ...t, status: 'paused' } : t
-      ));
+      // Перезагружаем список объявлений для гарантированного обновления UI
+      await loadTasks();
     } catch (error) {
       console.error('Error pausing task:', error);
       alert('Ошибка при приостановке объявления');
@@ -91,10 +89,8 @@ export default function MyTasksPage() {
 
       if (error) throw error;
 
-      // Немедленно обновляем UI
-      setTasks(prev => prev.map(t =>
-        t.id === taskId ? { ...t, status: 'active' } : t
-      ));
+      // Перезагружаем список объявлений для гарантированного обновления UI
+      await loadTasks();
     } catch (error) {
       console.error('Error resuming task:', error);
       alert('Ошибка при возобновлении объявления');

@@ -72,10 +72,8 @@ export default function MyOrdersPage() {
 
       if (error) throw error;
 
-      // Немедленно обновляем UI
-      setOrders(prev => prev.map(o =>
-        o.id === orderId ? { ...o, status: 'paused' } : o
-      ));
+      // Перезагружаем список заказов для гарантированного обновления UI
+      await loadOrders();
     } catch (error) {
       console.error('Error pausing order:', error);
       alert('Ошибка при приостановке заказа');
@@ -91,10 +89,8 @@ export default function MyOrdersPage() {
 
       if (error) throw error;
 
-      // Немедленно обновляем UI
-      setOrders(prev => prev.map(o =>
-        o.id === orderId ? { ...o, status: 'open' } : o
-      ));
+      // Перезагружаем список заказов для гарантированного обновления UI
+      await loadOrders();
     } catch (error) {
       console.error('Error resuming order:', error);
       alert('Ошибка при возобновлении заказа');
