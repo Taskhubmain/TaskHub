@@ -97,12 +97,24 @@ export default function PriceDisplay({ amount, fromCurrency, currency, className
 
       return (
         <div className={`flex flex-wrap items-center gap-1 md:gap-2 ${className}`}>
-          <span className="line-through text-red-500 text-sm whitespace-nowrap">
-            {minPrice.formatted}–{maxPrice.formatted}
-          </span>
-          <span className="font-semibold whitespace-nowrap">
-            {discountedMinPrice.formatted}–{discountedMaxPrice.formatted}
-          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="line-through text-red-500 text-sm whitespace-nowrap">
+              {minPrice.formatted}
+            </span>
+            <span className="line-through text-red-500 text-sm hidden sm:inline">–</span>
+            <span className="line-through text-red-500 text-sm whitespace-nowrap">
+              {maxPrice.formatted}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="font-semibold whitespace-nowrap">
+              {discountedMinPrice.formatted}
+            </span>
+            <span className="font-semibold hidden sm:inline">–</span>
+            <span className="font-semibold whitespace-nowrap">
+              {discountedMaxPrice.formatted}
+            </span>
+          </div>
           {minPrice.isConverted && (
             <PriceTooltip original={`${discountedMinPrice.original}–${discountedMaxPrice.original}`} />
           )}
@@ -113,7 +125,11 @@ export default function PriceDisplay({ amount, fromCurrency, currency, className
     return (
       <div className={`flex flex-wrap items-center gap-1 md:gap-1.5 ${className}`}>
         <span className="font-semibold whitespace-nowrap">
-          {minPrice.formatted}–{maxPrice.formatted}
+          {minPrice.formatted}
+        </span>
+        <span className="font-semibold hidden sm:inline">–</span>
+        <span className="font-semibold whitespace-nowrap">
+          {maxPrice.formatted}
         </span>
         {minPrice.isConverted && (
           <PriceTooltip original={`${minPrice.original}–${maxPrice.original}`} />

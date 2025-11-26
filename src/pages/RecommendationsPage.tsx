@@ -509,7 +509,7 @@ export default function RecommendationsPage() {
                           {rec.match_reasons.slice(0, 2).map((reason, idx) => (
                             <div key={idx} className="flex items-start gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
-                              <p className="text-xs text-gray-600">{reason.value}</p>
+                              <NoTranslate as="p" className="text-xs text-gray-600">{reason.value}</NoTranslate>
                             </div>
                           ))}
                         </div>

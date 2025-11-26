@@ -2013,14 +2013,14 @@ export default function ProfilePage() {
                                                 {rec.match_reasons.slice(0, 2).map((reason: any, idx: number) => (
                                                   <div key={idx} className="flex items-start gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-[#6FE7C8] mt-1.5 flex-shrink-0"></div>
-                                                    <p className="text-xs text-gray-600">{reason.value}</p>
+                                                    <NoTranslate as="p" className="text-xs text-gray-600">{reason.value}</NoTranslate>
                                                   </div>
                                                 ))}
                                               </div>
                                             )}
                                           </CardContent>
-                                          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t">
-                                            <div className="flex-shrink min-w-0">
+                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-t">
+                                            <div className="flex-shrink-0">
                                               <PriceDisplay
                                                 amount={order.price_min}
                                                 maxAmount={order.price_max}
