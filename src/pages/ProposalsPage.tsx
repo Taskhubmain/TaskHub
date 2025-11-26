@@ -387,7 +387,8 @@ export default function ProposalsPage() {
         price: proposal.price,
         currency: proposal.currency,
         delivery_days: proposal.delivery_days,
-        status: 'in_progress'
+        status: 'in_progress',
+        is_boosted: item.is_boosted || false
       };
 
       const { data: createdDeal, error: dealError } = await supabase
