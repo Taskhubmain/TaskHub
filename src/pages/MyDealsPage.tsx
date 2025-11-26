@@ -709,7 +709,12 @@ export default function MyDealsPage() {
                             </p>
                           ) : (
                             proposals[order.id].map((proposal) => (
-                              <Card key={proposal.id}>
+                              <Card key={proposal.id} className={proposal.status === 'rejected' ? 'relative' : ''}>
+                                {proposal.status === 'rejected' && (
+                                  <div className="absolute top-2 right-2 z-10">
+                                    <Badge variant="destructive" className="text-xs">Отклонено</Badge>
+                                  </div>
+                                )}
                                 <CardContent className="p-3 xs-375:p-4">
                                   <div className="mb-2">
                                     <div className="flex flex-col xs-414:flex-row xs-414:justify-between xs-414:items-start gap-2 mb-2">
@@ -768,15 +773,17 @@ export default function MyDealsPage() {
                                         />
                                       </div>
                                       <div className="flex items-center gap-2 xs-414:flex-col xs-414:items-end">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() =>
-                                            (window.location.hash = '/proposals')
-                                          }
-                                        >
-                                          <ExternalLink className="h-3 w-3" />
-                                        </Button>
+                                        {proposal.status !== 'rejected' && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() =>
+                                              (window.location.hash = '/proposals')
+                                            }
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                          </Button>
+                                        )}
                                         <div className="text-xs text-[#3F7F6E] whitespace-nowrap">
                                           {new Date(
                                             proposal.created_at
@@ -1086,7 +1093,12 @@ export default function MyDealsPage() {
                             </p>
                           ) : (
                             proposals[task.id].map((proposal) => (
-                              <Card key={proposal.id}>
+                              <Card key={proposal.id} className={proposal.status === 'rejected' ? 'relative' : ''}>
+                                {proposal.status === 'rejected' && (
+                                  <div className="absolute top-2 right-2 z-10">
+                                    <Badge variant="destructive" className="text-xs">Отклонено</Badge>
+                                  </div>
+                                )}
                                 <CardContent className="p-3 xs-375:p-4">
                                   <div className="mb-2">
                                     <div className="flex flex-col xs-414:flex-row xs-414:justify-between xs-414:items-start gap-2 mb-2">
@@ -1145,15 +1157,17 @@ export default function MyDealsPage() {
                                         />
                                       </div>
                                       <div className="flex items-center gap-2 xs-414:flex-col xs-414:items-end">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() =>
-                                            (window.location.hash = '/proposals')
-                                          }
-                                        >
-                                          <ExternalLink className="h-3 w-3" />
-                                        </Button>
+                                        {proposal.status !== 'rejected' && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() =>
+                                              (window.location.hash = '/proposals')
+                                            }
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                          </Button>
+                                        )}
                                         <div className="text-xs text-[#3F7F6E] whitespace-nowrap">
                                           {new Date(
                                             proposal.created_at
