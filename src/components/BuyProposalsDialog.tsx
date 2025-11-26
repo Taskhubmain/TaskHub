@@ -133,16 +133,29 @@ export default function BuyProposalsDialog({
         throw updateError;
       }
 
-      // Create wallet transaction
+      // Update wallets table to keep in sync
+      await supabase
+        .from('wallets')
+        .update({
+          balance: newBalance,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      // Create wallet transaction in wallet_ledger
       await supabase
         .from('wallet_ledger')
         .insert({
           user_id: user.id,
-          amount: -pkg.priceUSD,
-          balance_after: newBalance,
-          type: 'purchase',
-          description: `Покупка ${pkg.amount} откликов`,
-          currency: userCurrency,
+          kind: 'purchase',
+          status: 'completed',
+          amount_minor: Math.round(-pkg.priceUSD * 100),
+          currency: userCurrency.toLowerCase(),
+          metadata: {
+            package_id: pkg.id,
+            proposals_amount: pkg.amount,
+            description: `Покупка ${pkg.amount} откликов`,
+          },
         });
 
       onSuccess();

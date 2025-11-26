@@ -78,12 +78,23 @@ export default function SubscriptionPurchaseDialog({
         return;
       }
 
+      const newBalance = profile.balance - plan.priceUSD;
+
       const { error: balanceError } = await supabase
         .from('profiles')
-        .update({ balance: profile.balance - plan.priceUSD })
+        .update({ balance: newBalance })
         .eq('id', user.id);
 
       if (balanceError) throw balanceError;
+
+      // Update wallets table to keep in sync
+      await supabase
+        .from('wallets')
+        .update({
+          balance: newBalance,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
 
       const { data: existingSub } = await supabase
         .from('recommendations_subscriptions')
@@ -121,8 +132,8 @@ export default function SubscriptionPurchaseDialog({
         .insert({
           user_id: user.id,
           kind: 'purchase',
-          status: 'succeeded',
-          amount_minor: plan.priceUSD * 100,
+          status: 'completed',
+          amount_minor: Math.round(-plan.priceUSD * 100),
           currency: 'usd',
           metadata: {
             plan_type: selectedPlan,
