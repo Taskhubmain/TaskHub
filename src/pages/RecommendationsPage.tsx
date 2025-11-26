@@ -484,7 +484,7 @@ export default function RecommendationsPage() {
                       </div>
 
                       {/* Order Title */}
-                      <NoTranslate as="h3" className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+                      <NoTranslate as="h3" className="font-semibold text-lg text-gray-900 mb-3 line-clamp-2">
                         {order.title}
                       </NoTranslate>
 

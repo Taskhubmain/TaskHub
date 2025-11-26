@@ -1989,9 +1989,9 @@ export default function ProfilePage() {
                                           </div>
                                           <CardHeader className="pb-3">
                                             <NoTranslate as="div">
-                                              <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
+                                              <CardTitle className="text-base leading-6 pr-20 line-clamp-2 mb-2">{order.title}</CardTitle>
                                             </NoTranslate>
-                                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                               <Badge variant="secondary">{order.category}</Badge>
                                               {order.subcategory && <Badge variant="outline">{order.subcategory}</Badge>}
                                             </div>
