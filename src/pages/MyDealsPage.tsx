@@ -358,14 +358,39 @@ export default function MyDealsPage() {
     type: 'order' | 'task'
   ) => {
     const isPausing = currentStatus === 'open' || currentStatus === 'active';
-
     const newStatus = isPausing ? 'paused' : type === 'order' ? 'open' : 'active';
 
-    const table = type === 'order' ? 'orders' : 'tasks';
-    const { error } = await getSupabase().from(table).update({ status: newStatus }).eq('id', itemId);
+    // Мгновенно обновляем UI
+    if (type === 'order') {
+      setOrders(prev => prev.map(o =>
+        o.id === itemId ? { ...o, status: newStatus } : o
+      ));
+    } else {
+      setTasks(prev => prev.map(t =>
+        t.id === itemId ? { ...t, status: newStatus } : t
+      ));
+    }
 
-    if (!error) {
-      loadDeals();
+    // Обновляем в базе данных
+    const table = type === 'order' ? 'orders' : 'tasks';
+    const { error } = await getSupabase()
+      .from(table)
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Error updating status:', error);
+      // Откатываем изменение при ошибке
+      if (type === 'order') {
+        setOrders(prev => prev.map(o =>
+          o.id === itemId ? { ...o, status: currentStatus } : o
+        ));
+      } else {
+        setTasks(prev => prev.map(t =>
+          t.id === itemId ? { ...t, status: currentStatus } : t
+        ));
+      }
+      alert('Ошибка при изменении статуса');
     }
   };
 
@@ -384,7 +409,14 @@ export default function MyDealsPage() {
     const { error } = await getSupabase().from(table).delete().eq('id', itemId);
 
     if (!error) {
-      loadDeals();
+      // Мгновенно обновляем UI
+      if (type === 'order') {
+        setOrders(prev => prev.filter(o => o.id !== itemId));
+      } else {
+        setTasks(prev => prev.filter(t => t.id !== itemId));
+      }
+    } else {
+      alert('Ошибка при удалении');
     }
   };
 
