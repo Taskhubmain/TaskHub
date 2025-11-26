@@ -110,13 +110,9 @@ export default function ProposalsPage() {
           } else if (payload.eventType === 'UPDATE') {
             const updatedProposal = payload.new as any;
 
-            if (updatedProposal.status === 'accepted') {
-              setSentProposals(prev => prev.filter(p => p.id !== updatedProposal.id));
-              setReceivedProposals(prev => prev.filter(p => p.id !== updatedProposal.id));
-            } else {
-              setSentProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
-              setReceivedProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
-            }
+            // Keep accepted proposals visible with updated badge
+            setSentProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
+            setReceivedProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
             setSentProposals(prev => prev.filter(p => p.id !== deletedId));
@@ -143,7 +139,7 @@ export default function ProposalsPage() {
         .from('proposals')
         .select('*')
         .eq('user_id', user.id)
-        .in('status', ['pending', 'withdrawn', 'rejected'])
+        .in('status', ['pending', 'withdrawn', 'rejected', 'accepted'])
         .order('created_at', { ascending: false });
 
       const orderIds = await getUserOrderIds();
@@ -160,7 +156,7 @@ export default function ProposalsPage() {
           .from('proposals')
           .select('*')
           .or(conditions.join(','))
-          .in('status', ['pending', 'rejected'])
+          .in('status', ['pending', 'rejected', 'accepted'])
           .order('created_at', { ascending: false });
 
         received = receivedData || [];
@@ -561,7 +557,8 @@ export default function ProposalsPage() {
 
   const proposals = activeTab === 'sent' ? sentProposals : receivedProposals;
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, isDealInProgress: boolean = false) => {
+    if (status === 'accepted' && isDealInProgress) return <Badge className="bg-blue-100 text-blue-800">Принято в работу</Badge>;
     if (status === 'accepted') return <Badge className="bg-green-100 text-green-800">Принят</Badge>;
     if (status === 'rejected') return <Badge variant="destructive">Отклонён</Badge>;
     if (status === 'withdrawn') return <Badge className="bg-orange-100 text-orange-800">Отозван</Badge>;
@@ -731,13 +728,13 @@ export default function ProposalsPage() {
                     {/* Кнопки действий */}
                     {proposal.status === 'rejected' ? (
                       <div className="flex items-center gap-2">
-                        {getStatusBadge(proposal.status)}
+                        {getStatusBadge(proposal.status, false)}
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {/* Первая строка: Статус и Принять */}
                         <div className="flex items-center gap-2">
-                          {getStatusBadge(proposal.status)}
+                          {getStatusBadge(proposal.status, proposal.status === 'accepted')}
                           {activeTab === 'received' && proposal.status === 'pending' && (
                             <Button
                               size="sm"
@@ -755,36 +752,38 @@ export default function ProposalsPage() {
                           )}
                         </div>
 
-                        {/* Вторая строка: Отклонить и Подробнее */}
-                        {activeTab === 'received' && proposal.status === 'pending' ? (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReject(proposal.id)}
-                              disabled={acceptingProposal === proposal.id}
-                              className="px-3 xs-375:px-4"
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Отклонить
-                            </Button>
+                        {/* Вторая строка: Отклонить и Подробнее - скрыты для принятых откликов */}
+                        {proposal.status === 'accepted' ? null : (
+                          activeTab === 'received' && proposal.status === 'pending' ? (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReject(proposal.id)}
+                                disabled={acceptingProposal === proposal.id}
+                                className="px-3 xs-375:px-4"
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Отклонить
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => showDetails(proposal)}
+                              >
+                                Подробнее
+                              </Button>
+                            </div>
+                          ) : (
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => showDetails(proposal)}
+                              className="w-full"
                             >
                               Подробнее
                             </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => showDetails(proposal)}
-                            className="w-full"
-                          >
-                            Подробнее
-                          </Button>
+                          )
                         )}
                       </div>
                     )}
@@ -878,7 +877,7 @@ export default function ProposalsPage() {
                   </div>
                   <div>
                     <span className="text-[#3F7F6E]">Статус: </span>
-                    {getStatusBadge(selectedProposal.status)}
+                    {getStatusBadge(selectedProposal.status, selectedProposal.status === 'accepted')}
                   </div>
                 </div>
               </div>

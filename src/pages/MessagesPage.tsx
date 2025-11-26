@@ -349,6 +349,31 @@ export default function MessagesPage() {
       }
     }).then(sub => { profilesSubscription = sub; });
 
+    let dealsSubscription: any = null;
+    subscribeWithMonitoring('deals-changes', {
+      table: 'deals',
+      event: 'UPDATE',
+      filter: user ? `or(client_id.eq.${user.id},freelancer_id.eq.${user.id})` : undefined,
+      callback: (payload) => {
+        const updatedDeal = payload.new as any;
+        setDeals((prev) => {
+          const exists = prev.some((d) => d.id === updatedDeal.id);
+          if (!exists) return prev;
+
+          return prev.map((d) => d.id === updatedDeal.id ? { ...d, ...updatedDeal } : d);
+        });
+
+        // Auto-open progress panel if current deal progress changed
+        if (selectedChatId && updatedDeal.chat_id === selectedChatId) {
+          const currentDeal = deals.find(d => d.chat_id === selectedChatId);
+          if (currentDeal && currentDeal.current_progress !== updatedDeal.current_progress) {
+            setProgressPanelOpen(true);
+          }
+        }
+      },
+      onError: () => {}
+    }).then(sub => { dealsSubscription = sub; });
+
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const chatId = params.get('chat');
     const toUserId = params.get('to');
@@ -434,6 +459,7 @@ export default function MessagesPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       userChatsSubscription?.unsubscribe();
       profilesSubscription?.unsubscribe();
+      dealsSubscription?.unsubscribe();
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [user]);
