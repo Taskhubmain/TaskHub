@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Clock } from 'lucide-react';
+import { Plus, Clock, Edit2, Trash2, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,59 @@ export default function MyTasksPage() {
       setTasks(data || []);
     }
     setLoading(false);
+  };
+
+  const handleDelete = async (taskId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить это объявление?')) return;
+
+    try {
+      const { error } = await getSupabase()
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      alert('Объявление удалено');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Ошибка при удалении объявления');
+    }
+  };
+
+  const handlePause = async (taskId: string) => {
+    try {
+      const { error } = await getSupabase()
+        .from('tasks')
+        .update({ status: 'paused' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'paused' } : t));
+      alert('Объявление приостановлено');
+    } catch (error) {
+      console.error('Error pausing task:', error);
+      alert('Ошибка при приостановке объявления');
+    }
+  };
+
+  const handleResume = async (taskId: string) => {
+    try {
+      const { error } = await getSupabase()
+        .from('tasks')
+        .update({ status: 'active' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'active' } : t));
+      alert('Объявление возобновлено');
+    } catch (error) {
+      console.error('Error resuming task:', error);
+      alert('Ошибка при возобновлении объявления');
+    }
   };
 
   if (!isAuthenticated) {
@@ -118,7 +171,7 @@ export default function MyTasksPage() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1 px-6">
+                    <CardContent className="flex-1 px-6 flex flex-col">
                       <div className="flex flex-wrap gap-2 mb-3">
                         {(task.tags || []).map((t: string) => (
                           <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
@@ -130,6 +183,46 @@ export default function MyTasksPage() {
                       </div>
                       <div className="text-xs text-[#3F7F6E] mt-2">
                         Создано: {new Date(task.created_at).toLocaleDateString()}
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.location.hash = `#/task/${task.id}/edit`}
+                          className="flex-1"
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Редактировать
+                        </Button>
+                        {task.status === 'active' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePause(task.id)}
+                          >
+                            <Pause className="h-3 w-3 mr-1" />
+                            Приостановить
+                          </Button>
+                        ) : task.status === 'paused' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResume(task.id)}
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            Возобновить
+                          </Button>
+                        ) : null}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(task.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Удалить
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

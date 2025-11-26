@@ -254,6 +254,14 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       return;
     }
 
+    // Если это заказ - меняем его статус на completed (скрывает с биржи)
+    if (deal?.order_id) {
+      await supabase
+        .from('orders')
+        .update({ status: 'completed' })
+        .eq('id', deal.order_id);
+    }
+
     // Освобождаем эскроу и переводим средства исполнителю
     const { data: escrowResult, error: escrowError } = await supabase
       .rpc('release_escrow_to_freelancer', {

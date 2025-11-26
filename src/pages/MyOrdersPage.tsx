@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, Edit2, Trash2, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ export default function MyOrdersPage() {
     if (!user) return;
 
     setLoading(true);
-    const { data, error } = await getSupabase()
+    const { data, error} = await getSupabase()
       .from('orders')
       .select('*')
       .eq('user_id', user.id)
@@ -42,6 +42,59 @@ export default function MyOrdersPage() {
       setOrders(data || []);
     }
     setLoading(false);
+  };
+
+  const handleDelete = async (orderId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот заказ?')) return;
+
+    try {
+      const { error } = await getSupabase()
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      alert('Заказ удалён');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Ошибка при удалении заказа');
+    }
+  };
+
+  const handlePause = async (orderId: string) => {
+    try {
+      const { error } = await getSupabase()
+        .from('orders')
+        .update({ status: 'paused' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'paused' } : o));
+      alert('Заказ приостановлен');
+    } catch (error) {
+      console.error('Error pausing order:', error);
+      alert('Ошибка при приостановке заказа');
+    }
+  };
+
+  const handleResume = async (orderId: string) => {
+    try {
+      const { error } = await getSupabase()
+        .from('orders')
+        .update({ status: 'open' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'open' } : o));
+      alert('Заказ возобновлён');
+    } catch (error) {
+      console.error('Error resuming order:', error);
+      alert('Ошибка при возобновлении заказа');
+    }
   };
 
   if (!isAuthenticated) {
@@ -113,7 +166,7 @@ export default function MyOrdersPage() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1 px-6">
+                    <CardContent className="flex-1 px-6 flex flex-col">
                       <div className="flex flex-wrap gap-2 mb-3">
                         {(order.tags || []).map((t: string) => (
                           <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
@@ -126,6 +179,51 @@ export default function MyOrdersPage() {
                       <div className="text-xs text-[#3F7F6E] mt-2">
                         Создан: {new Date(order.created_at).toLocaleDateString()}
                       </div>
+
+                      {/* Показываем кнопки только если заказ НЕ завершён */}
+                      {order.status !== 'completed' && (
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.location.hash = `#/order/${order.id}/edit`}
+                            className="flex-1"
+                          >
+                            <Edit2 className="h-3 w-3 mr-1" />
+                            Редактировать
+                          </Button>
+                          {order.status === 'open' || order.status === 'paused' ? (
+                            order.status === 'open' ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePause(order.id)}
+                              >
+                                <Pause className="h-3 w-3 mr-1" />
+                                Приостановить
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleResume(order.id)}
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Возобновить
+                              </Button>
+                            )
+                          ) : null}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(order.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Удалить
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>

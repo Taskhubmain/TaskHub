@@ -459,6 +459,19 @@ export default function ProposalsPage() {
         throw proposalError;
       }
 
+      // Для заказов: меняем статус на 'in_progress' (скрывает с биржи)
+      // Для объявлений: статус не меняем (остаются доступными на бирже)
+      if (proposal.order_id) {
+        const { error: orderUpdateError } = await supabase
+          .from('orders')
+          .update({ status: 'in_progress' })
+          .eq('id', proposal.order_id);
+
+        if (orderUpdateError) {
+          console.error('Order status update error:', orderUpdateError);
+        }
+      }
+
       // Убираем отклик из списка немедленно
       setReceivedProposals(prev => prev.filter(p => p.id !== proposal.id));
       setSentProposals(prev => prev.filter(p => p.id !== proposal.id));
