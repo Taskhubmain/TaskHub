@@ -193,6 +193,13 @@ export default function MyDealsPage() {
   const loadAllDeals = async () => {
     setLoading(true);
     try {
+      // Закрываем истекшие заказы перед загрузкой
+      try {
+        await getSupabase().rpc('close_expired_orders');
+      } catch (rpcError) {
+        console.log('[MyDealsPage] close_expired_orders RPC not available:', rpcError);
+      }
+
       const {
         data: { user: authUser }
       } = await getSupabase().auth.getUser();
@@ -428,7 +435,7 @@ export default function MyDealsPage() {
       open: { label: 'Открыт', variant: 'default' },
       active: { label: 'Активно', variant: 'default' },
       paused: { label: 'Приостановлено', variant: 'warning' },
-      closed: { label: 'Закрыт', variant: 'outline' }
+      closed: { label: 'Истек срок', variant: 'outline' }
     };
     const config = variants[status] || { label: status, variant: 'outline' };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -554,7 +561,7 @@ export default function MyDealsPage() {
                           )}
                         </div>
                         <div className="sm:hidden flex gap-2 mt-2">
-                          {!order.hasActiveDeal ? (
+                          {!order.hasActiveDeal && order.status !== 'closed' ? (
                             <>
                               <Button
                                 variant="outline"
@@ -664,7 +671,7 @@ export default function MyDealsPage() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          {!order.hasActiveDeal ? (
+                          {!order.hasActiveDeal && order.status !== 'closed' ? (
                             <>
                               <Button variant="outline" size="sm" asChild>
                                 <a href={`#/order/${order.id}/edit`}>
@@ -932,7 +939,7 @@ export default function MyDealsPage() {
                           )}
                         </div>
                         <div className="sm:hidden flex gap-2 mt-2">
-                          {!task.hasActiveDeal ? (
+                          {!task.hasActiveDeal && task.status !== 'closed' ? (
                             <>
                               <Button
                                 variant="outline"
@@ -1038,7 +1045,7 @@ export default function MyDealsPage() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                          {!task.hasActiveDeal ? (
+                          {!task.hasActiveDeal && task.status !== 'closed' ? (
                             <>
                               <Button variant="outline" size="sm" asChild>
                                 <a href={`#/task/${task.id}/edit`}>
