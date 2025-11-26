@@ -1224,65 +1224,81 @@ export default function ProfilePage() {
                       </Card>
                     ) : (
                       <>
-                      <div className="grid grid-cols-1 gap-3 lg:gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {userOrders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE).map((order, index) => (
                           <motion.div
                             key={order.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05, type: 'spring', stiffness: 300, damping: 30 }}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.03 }}
                           >
-                            <Card className="cursor-pointer hover:shadow-lg hover:border-[#6FE7C8]/50 transition-all duration-300 hover:scale-[1.01]" onClick={() => openPreview(order, 'order')}>
-                            <CardContent className="p-4 lg:p-6">
-                              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:gap-6">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-base lg:text-lg mb-2">{order.title}</h4>
-                                  <div className="flex items-center gap-2 mb-2 lg:mb-3">
-                                    <Badge variant="secondary" className="text-xs">{order.category}</Badge>
-                                    <Badge variant="outline" className="text-xs">{order.status}</Badge>
-                                  </div>
-                                  <div className="flex flex-wrap gap-1.5 lg:gap-2 mb-2 lg:mb-3">
-                                    {(order.tags || []).map((t: string) => (
-                                      <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
-                                    ))}
-                                  </div>
-                                  <p className="text-xs lg:text-sm text-[#3F7F6E] mb-2 lg:mb-3 line-clamp-2">{order.description}</p>
-                                  <div className="font-semibold text-sm lg:text-base text-[#6FE7C8]">
-                                    {order.currency} {order.price_min}–{order.price_max}
-                                  </div>
+                            <Card
+                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
+                              onClick={() => openPreview(order, 'order')}
+                            >
+                              <div className="absolute top-3 right-3 z-10">
+                                <Badge variant="outline" className="text-xs">{order.status}</Badge>
+                              </div>
+                              <CardHeader className="pb-3">
+                                <NoTranslate as="div">
+                                  <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
+                                </NoTranslate>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                  <Badge variant="secondary">{order.category}</Badge>
+                                  {order.subcategory && <Badge variant="outline">{order.subcategory}</Badge>}
                                 </div>
-                                <div className="flex lg:flex-col items-center lg:items-end gap-3 lg:gap-2 text-xs lg:text-sm text-[#3F7F6E] lg:min-w-[140px]">
-                                  <div className="flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
-                                  </div>
+                              </CardHeader>
+                              <CardContent className="flex-1 px-6">
+                                {order.tags && order.tags.length > 0 && (
+                                  <NoTranslate className="flex flex-wrap gap-2 mb-3">
+                                    {order.tags.slice(0, 3).map((tag: string, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                                    ))}
+                                    {order.tags.length > 3 && (
+                                      <Badge variant="outline" className="text-xs">+{order.tags.length - 3}</Badge>
+                                    )}
+                                  </NoTranslate>
+                                )}
+                                <NoTranslate className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{order.description}</NoTranslate>
+                                <div className="flex items-center gap-1.5 text-xs text-[#3F7F6E]">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                              </CardContent>
+                              <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t">
+                                <div className="flex-shrink">
+                                  <PriceDisplay
+                                    amount={order.price_min}
+                                    maxAmount={order.price_max}
+                                    showRange={true}
+                                    fromCurrency={order.currency || 'USD'}
+                                  />
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </Card>
                           </motion.div>
                         ))}
                       </div>
                       {userOrders.length > ITEMS_PER_PAGE && (
-                        <div className="flex items-center justify-center gap-2 mt-4">
+                        <div className="flex items-center justify-center gap-2 mt-6">
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
+                            onClick={() => setOrdersPage(ordersPage - 1)}
                             disabled={ordersPage === 1}
+                            variant="outline"
+                            className="h-10"
                           >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="w-4 h-4" />
                           </Button>
-                          <span className="text-sm text-[#3F7F6E]">
+                          <span className="text-sm text-[#3F7F6E] min-w-[60px] text-center">
                             {ordersPage} / {Math.ceil(userOrders.length / ITEMS_PER_PAGE)}
                           </span>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setOrdersPage(p => Math.min(Math.ceil(userOrders.length / ITEMS_PER_PAGE), p + 1))}
+                            onClick={() => setOrdersPage(ordersPage + 1)}
                             disabled={ordersPage >= Math.ceil(userOrders.length / ITEMS_PER_PAGE)}
+                            variant="outline"
+                            className="h-10"
                           >
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="w-4 h-4" />
                           </Button>
                         </div>
                       )}
@@ -1307,70 +1323,84 @@ export default function ProfilePage() {
                       </Card>
                     ) : (
                       <>
-                      <div className="grid grid-cols-1 gap-3 lg:gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {userTasks.slice((tasksPage - 1) * ITEMS_PER_PAGE, tasksPage * ITEMS_PER_PAGE).map((task, index) => (
                           <motion.div
                             key={task.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05, type: 'spring', stiffness: 300, damping: 30 }}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.03 }}
                           >
-                            <Card className="cursor-pointer hover:shadow-lg hover:border-[#6FE7C8]/50 transition-all duration-300 hover:scale-[1.01]" onClick={() => openPreview(task, 'task')}>
-                            <CardContent className="p-4 lg:p-6">
-                              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:gap-6">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-base lg:text-lg mb-2">{task.title}</h4>
-                                  <div className="flex items-center gap-2 mb-2 lg:mb-3 flex-wrap">
-                                    <Badge variant="secondary" className="text-xs">{task.category}</Badge>
-                                    <Badge variant="outline" className="text-xs">{task.status}</Badge>
-                                    {task.delivery_days && (
-                                      <Badge variant="outline" className="flex items-center gap-1 text-xs">
-                                        <Clock className="h-3 w-3" /> {task.delivery_days}д
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap gap-1.5 lg:gap-2 mb-2 lg:mb-3">
-                                    {(task.tags || []).map((t: string) => (
-                                      <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
-                                    ))}
-                                  </div>
-                                  <p className="text-xs lg:text-sm text-[#3F7F6E] mb-2 lg:mb-3 line-clamp-2">{task.description}</p>
-                                  <div className="font-semibold text-sm lg:text-base text-[#6FE7C8]">
-                                    {task.currency} {task.price}
-                                  </div>
+                            <Card
+                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
+                              onClick={() => openPreview(task, 'task')}
+                            >
+                              <div className="absolute top-3 right-3 z-10">
+                                <Badge variant="outline" className="text-xs">{task.status}</Badge>
+                              </div>
+                              <CardHeader className="pb-3">
+                                <NoTranslate as="div">
+                                  <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{task.title}</CardTitle>
+                                </NoTranslate>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                  <Badge variant="secondary">{task.category}</Badge>
+                                  {task.subcategory && <Badge variant="outline">{task.subcategory}</Badge>}
+                                  {task.delivery_days && (
+                                    <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                                      <Clock className="h-3 w-3" /> {task.delivery_days}д
+                                    </Badge>
+                                  )}
                                 </div>
-                                <div className="flex lg:flex-col items-center lg:items-end gap-3 lg:gap-2 text-xs lg:text-sm text-[#3F7F6E] lg:min-w-[140px]">
-                                  <div className="flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
-                                  </div>
+                              </CardHeader>
+                              <CardContent className="flex-1 px-6">
+                                {task.tags && task.tags.length > 0 && (
+                                  <NoTranslate className="flex flex-wrap gap-2 mb-3">
+                                    {task.tags.slice(0, 3).map((tag: string, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+                                    ))}
+                                    {task.tags.length > 3 && (
+                                      <Badge variant="outline" className="text-xs">+{task.tags.length - 3}</Badge>
+                                    )}
+                                  </NoTranslate>
+                                )}
+                                <NoTranslate className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{task.description}</NoTranslate>
+                                <div className="flex items-center gap-1.5 text-xs text-[#3F7F6E]">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                              </CardContent>
+                              <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t">
+                                <div className="flex-shrink">
+                                  <PriceDisplay
+                                    amount={task.price}
+                                    fromCurrency={task.currency || 'USD'}
+                                  />
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </Card>
                           </motion.div>
                         ))}
                       </div>
                       {userTasks.length > ITEMS_PER_PAGE && (
-                        <div className="flex items-center justify-center gap-2 mt-4">
+                        <div className="flex items-center justify-center gap-2 mt-6">
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setTasksPage(p => Math.max(1, p - 1))}
+                            onClick={() => setTasksPage(tasksPage - 1)}
                             disabled={tasksPage === 1}
+                            variant="outline"
+                            className="h-10"
                           >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="w-4 h-4" />
                           </Button>
-                          <span className="text-sm text-[#3F7F6E]">
+                          <span className="text-sm text-[#3F7F6E] min-w-[60px] text-center">
                             {tasksPage} / {Math.ceil(userTasks.length / ITEMS_PER_PAGE)}
                           </span>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setTasksPage(p => Math.min(Math.ceil(userTasks.length / ITEMS_PER_PAGE), p + 1))}
+                            onClick={() => setTasksPage(tasksPage + 1)}
                             disabled={tasksPage >= Math.ceil(userTasks.length / ITEMS_PER_PAGE)}
+                            variant="outline"
+                            className="h-10"
                           >
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="w-4 h-4" />
                           </Button>
                         </div>
                       )}
