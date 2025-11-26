@@ -1233,12 +1233,9 @@ export default function ProfilePage() {
                             transition={{ delay: index * 0.03 }}
                           >
                             <Card
-                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
+                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
                               onClick={() => openPreview(order, 'order')}
                             >
-                              <div className="absolute top-3 right-3 z-10">
-                                <Badge variant="outline" className="text-xs">{order.status}</Badge>
-                              </div>
                               <CardHeader className="pb-3">
                                 <NoTranslate as="div">
                                   <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
@@ -1332,12 +1329,9 @@ export default function ProfilePage() {
                             transition={{ delay: index * 0.03 }}
                           >
                             <Card
-                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer relative"
+                              className="h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
                               onClick={() => openPreview(task, 'task')}
                             >
-                              <div className="absolute top-3 right-3 z-10">
-                                <Badge variant="outline" className="text-xs">{task.status}</Badge>
-                              </div>
                               <CardHeader className="pb-3">
                                 <NoTranslate as="div">
                                   <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{task.title}</CardTitle>
