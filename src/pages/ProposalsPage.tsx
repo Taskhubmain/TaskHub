@@ -109,8 +109,14 @@ export default function ProposalsPage() {
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedProposal = payload.new as any;
-            setSentProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
-            setReceivedProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
+
+            if (updatedProposal.status === 'rejected' || updatedProposal.status === 'accepted') {
+              setSentProposals(prev => prev.filter(p => p.id !== updatedProposal.id));
+              setReceivedProposals(prev => prev.filter(p => p.id !== updatedProposal.id));
+            } else {
+              setSentProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
+              setReceivedProposals(prev => prev.map(p => p.id === updatedProposal.id ? updatedProposal : p));
+            }
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id;
             setSentProposals(prev => prev.filter(p => p.id !== deletedId));
@@ -479,8 +485,10 @@ export default function ProposalsPage() {
 
       if (error) throw error;
 
+      setReceivedProposals(prev => prev.filter(p => p.id !== proposalId));
+      setSentProposals(prev => prev.filter(p => p.id !== proposalId));
+
       alert('Отклик отклонён');
-      loadProposals();
       setDetailsOpen(false);
     } catch (error) {
       console.error('Error rejecting proposal:', error);
