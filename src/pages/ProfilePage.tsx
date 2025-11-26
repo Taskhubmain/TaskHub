@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Heart, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart, RefreshCw, Award, DollarSign, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, MessageSquare, MapPin, AtSign, Link as LinkIcon, Clock, Image as ImageIcon, ExternalLink, Loader2, Calendar, Upload, X, Share2, Check, GraduationCap, Sparkles, Lock, Mail, AlertCircle, CheckCircle2, KeyRound, ShoppingCart, RefreshCw, Award, DollarSign, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MediaEditor } from '@/components/MediaEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +95,9 @@ export default function ProfilePage() {
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [tasksPage, setTasksPage] = useState(1);
+  const ITEMS_PER_PAGE = 3;
   const [insufficientProfile, setInsufficientProfile] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
@@ -1220,8 +1223,9 @@ export default function ProfilePage() {
                         </CardContent>
                       </Card>
                     ) : (
+                      <>
                       <div className="grid grid-cols-1 gap-3 lg:gap-4">
-                        {userOrders.map((order, index) => (
+                        {userOrders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE).map((order, index) => (
                           <motion.div
                             key={order.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -1252,10 +1256,6 @@ export default function ProfilePage() {
                                     <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                                     <span>{new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
                                   </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <Heart className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{order.likes_count || 0}</span>
-                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -1263,6 +1263,30 @@ export default function ProfilePage() {
                           </motion.div>
                         ))}
                       </div>
+                      {userOrders.length > ITEMS_PER_PAGE && (
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
+                            disabled={ordersPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-[#3F7F6E]">
+                            {ordersPage} / {Math.ceil(userOrders.length / ITEMS_PER_PAGE)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setOrdersPage(p => Math.min(Math.ceil(userOrders.length / ITEMS_PER_PAGE), p + 1))}
+                            disabled={ordersPage >= Math.ceil(userOrders.length / ITEMS_PER_PAGE)}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      </>
                     )}
                   </div>
 
@@ -1282,8 +1306,9 @@ export default function ProfilePage() {
                         </CardContent>
                       </Card>
                     ) : (
+                      <>
                       <div className="grid grid-cols-1 gap-3 lg:gap-4">
-                        {userTasks.map((task, index) => (
+                        {userTasks.slice((tasksPage - 1) * ITEMS_PER_PAGE, tasksPage * ITEMS_PER_PAGE).map((task, index) => (
                           <motion.div
                             key={task.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -1319,10 +1344,6 @@ export default function ProfilePage() {
                                     <Calendar className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                                     <span>{new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
                                   </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <Heart className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                    <span>{task.likes_count || 0}</span>
-                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -1330,6 +1351,30 @@ export default function ProfilePage() {
                           </motion.div>
                         ))}
                       </div>
+                      {userTasks.length > ITEMS_PER_PAGE && (
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTasksPage(p => Math.max(1, p - 1))}
+                            disabled={tasksPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-[#3F7F6E]">
+                            {tasksPage} / {Math.ceil(userTasks.length / ITEMS_PER_PAGE)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTasksPage(p => Math.min(Math.ceil(userTasks.length / ITEMS_PER_PAGE), p + 1))}
+                            disabled={tasksPage >= Math.ceil(userTasks.length / ITEMS_PER_PAGE)}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      </>
                     )}
                   </div>
                 </>
@@ -1525,7 +1570,6 @@ export default function ProfilePage() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">{review.category}</Badge>
                                   <div className="flex items-center gap-1 text-emerald-600">
                                     <Star className="h-4 w-4 fill-emerald-600" />
                                     <span className="font-semibold">{review.rating}.0</span>
