@@ -8,6 +8,7 @@ import { useRegion } from '@/contexts/RegionContext';
 import PriceDisplay from '@/components/PriceDisplay';
 import SubscriptionPurchaseDialog from '@/components/SubscriptionPurchaseDialog';
 import { Badge } from '@/components/ui/badge';
+import { NoTranslate } from '@/components/NoTranslate';
 
 interface Order {
   id: string;
@@ -66,14 +67,12 @@ export default function RecommendationsPage() {
 
       if (profileError) throw profileError;
       setProfile(profileData);
-      console.log('Profile loaded:', profileData);
 
       // Check subscription status
       const { data: hasActiveSub } = await supabase.rpc('has_active_recommendations_subscription', {
         p_user_id: user.id,
       });
 
-      console.log('Has active subscription:', hasActiveSub);
       setHasSubscription(hasActiveSub || false);
 
       if (hasActiveSub) {
@@ -81,25 +80,18 @@ export default function RecommendationsPage() {
           p_user_id: user.id,
         });
         setDaysRemaining(days || 0);
-        console.log('Days remaining:', days);
 
         // Check if profile has sufficient info
         const skills = profileData?.skills || [];
         const specialty = profileData?.specialty;
 
-        console.log('Skills count:', skills.length, 'Specialty:', specialty);
-
         if (skills.length < 6 || !specialty) {
-          console.log('Insufficient profile info');
           setInsufficientProfile(true);
         } else {
-          console.log('Profile sufficient, loading recommendations');
           setInsufficientProfile(false);
           // Load recommendations
           await loadRecommendations();
         }
-      } else {
-        console.log('No active subscription');
       }
     } catch (err) {
       console.error('Error loading profile:', err);
@@ -110,8 +102,6 @@ export default function RecommendationsPage() {
 
   const loadRecommendations = async () => {
     if (!user) return;
-
-    console.log('Starting to load recommendations for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -143,16 +133,12 @@ export default function RecommendationsPage() {
 
       if (error) throw error;
 
-      console.log('Raw recommendations data:', data);
-
       // Map the data to the expected format
       // orders!inner returns the joined data as an object, not an array
       const validRecommendations = (data || [])
         .filter((rec: any) => rec.orders && typeof rec.orders === 'object')
         .map((rec: any) => {
           const orderData = rec.orders;
-          console.log('Order data:', orderData);
-          console.log('price_min:', orderData.price_min, 'price_max:', orderData.price_max);
 
           return {
             id: rec.id,
@@ -176,7 +162,6 @@ export default function RecommendationsPage() {
           };
         });
 
-      console.log('Mapped recommendations:', validRecommendations);
       setRecommendations(validRecommendations);
     } catch (err) {
       console.error('Error loading recommendations:', err);
@@ -499,30 +484,23 @@ export default function RecommendationsPage() {
                       </div>
 
                       {/* Order Title */}
-                      <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+                      <NoTranslate as="h3" className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
                         {order.title}
-                      </h3>
+                      </NoTranslate>
 
                       {/* Order Description */}
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                      <NoTranslate as="p" className="text-sm text-gray-600 mb-3 line-clamp-3">
                         {order.description}
-                      </p>
+                      </NoTranslate>
 
                       {/* Price */}
-                      <div className="mb-3">
-                        {(() => {
-                          console.log('Rendering price for order:', order.id);
-                          console.log('price_min:', order.price_min, typeof order.price_min);
-                          console.log('price_max:', order.price_max, typeof order.price_max);
-                          return (
-                            <PriceDisplay
-                              amount={order.price_min}
-                              maxAmount={order.price_max}
-                              showRange={true}
-                              fromCurrency="USD"
-                            />
-                          );
-                        })()}
+                      <div className="mb-3 flex-shrink-0">
+                        <PriceDisplay
+                          amount={order.price_min}
+                          maxAmount={order.price_max}
+                          showRange={true}
+                          fromCurrency="USD"
+                        />
                       </div>
 
                       {/* Match Reasons */}
@@ -539,7 +517,7 @@ export default function RecommendationsPage() {
 
                       {/* Tags */}
                       {order.tags && order.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
+                        <NoTranslate className="flex flex-wrap gap-1 mb-4">
                           {order.tags.slice(0, 3).map((tag, idx) => (
                             <span
                               key={idx}
@@ -553,14 +531,14 @@ export default function RecommendationsPage() {
                               +{order.tags.length - 3}
                             </span>
                           )}
-                        </div>
+                        </NoTranslate>
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <Button
                           onClick={() => handlePropose(order.id)}
-                          className="flex-1 bg-[#3F7F6E] hover:bg-[#2F6F5E] text-sm h-9"
+                          className="flex-1 bg-[#3F7F6E] hover:bg-[#2F6F5E] text-sm h-9 whitespace-nowrap"
                         >
                           Откликнуться
                         </Button>

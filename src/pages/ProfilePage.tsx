@@ -14,6 +14,7 @@ import { getSupabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRegion } from '@/contexts/RegionContext';
 import PriceDisplay from '@/components/PriceDisplay';
+import { NoTranslate } from '@/components/NoTranslate';
 
 interface Order {
   id: string;
@@ -259,7 +260,6 @@ export default function ProfilePage() {
     if (!user) return;
 
     try {
-      console.log('[ProfilePage] Loading recommendations for user:', user.id);
       const { data, error } = await supabase
         .from('order_recommendations')
         .select(`
@@ -289,21 +289,9 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
-      console.log('[ProfilePage] Raw recommendations:', data);
-
       const validRecommendations = (data || []).filter(
         (rec: any) => rec.order && rec.order.status === 'open'
       );
-
-      console.log('[ProfilePage] Valid recommendations:', validRecommendations);
-      validRecommendations.forEach((rec: any, index: number) => {
-        console.log(`[ProfilePage] Rec ${index}:`, {
-          title: rec.order.title,
-          price_min: rec.order.price_min,
-          price_max: rec.order.price_max,
-          currency: rec.order.currency
-        });
-      });
 
       setRecommendations(validRecommendations);
     } catch (err) {
@@ -2000,7 +1988,9 @@ export default function ProfilePage() {
                                             </Badge>
                                           </div>
                                           <CardHeader className="pb-3">
-                                            <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
+                                            <NoTranslate as="div">
+                                              <CardTitle className="text-base leading-6 pr-16 line-clamp-2">{order.title}</CardTitle>
+                                            </NoTranslate>
                                             <div className="flex items-center gap-2 mt-2 flex-wrap">
                                               <Badge variant="secondary">{order.category}</Badge>
                                               {order.subcategory && <Badge variant="outline">{order.subcategory}</Badge>}
@@ -2008,16 +1998,16 @@ export default function ProfilePage() {
                                           </CardHeader>
                                           <CardContent className="flex-1 px-6">
                                             {order.tags && order.tags.length > 0 && (
-                                              <div className="flex flex-wrap gap-2 mb-3">
+                                              <NoTranslate className="flex flex-wrap gap-2 mb-3">
                                                 {order.tags.slice(0, 3).map((tag: string, idx: number) => (
                                                   <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
                                                 ))}
                                                 {order.tags.length > 3 && (
                                                   <Badge variant="outline" className="text-xs">+{order.tags.length - 3}</Badge>
                                                 )}
-                                              </div>
+                                              </NoTranslate>
                                             )}
-                                            <div className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{order.description}</div>
+                                            <NoTranslate className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{order.description}</NoTranslate>
                                             {rec.match_reasons && rec.match_reasons.length > 0 && (
                                               <div className="space-y-1 mb-3">
                                                 {rec.match_reasons.slice(0, 2).map((reason: any, idx: number) => (
@@ -2029,19 +2019,21 @@ export default function ProfilePage() {
                                               </div>
                                             )}
                                           </CardContent>
-                                          <div className="flex items-center justify-between px-6 py-4 border-t">
-                                            <PriceDisplay
-                                              amount={order.price_min}
-                                              maxAmount={order.price_max}
-                                              showRange={true}
-                                              fromCurrency={order.currency || 'USD'}
-                                            />
+                                          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t">
+                                            <div className="flex-shrink min-w-0">
+                                              <PriceDisplay
+                                                amount={order.price_min}
+                                                maxAmount={order.price_max}
+                                                showRange={true}
+                                                fromCurrency={order.currency || 'USD'}
+                                              />
+                                            </div>
                                             <Button
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 handlePropose(order.id);
                                               }}
-                                              className="bg-[#6FE7C8] hover:bg-[#5dd6b7] text-gray-900 text-sm h-9 px-4"
+                                              className="bg-[#6FE7C8] hover:bg-[#5dd6b7] text-gray-900 text-sm h-9 px-4 flex-shrink-0 whitespace-nowrap"
                                             >
                                               Откликнуться
                                             </Button>
