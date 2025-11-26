@@ -121,8 +121,8 @@ export default function MyDealsPage() {
   }, [user]);
 
   useEffect(() => {
-    loadDeals();
-  }, [user, activeTab]);
+    loadAllDeals();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -191,7 +191,7 @@ export default function MyDealsPage() {
     };
   }, [user]);
 
-  const loadDeals = async () => {
+  const loadAllDeals = async () => {
     setLoading(true);
     try {
       const {
@@ -199,133 +199,143 @@ export default function MyDealsPage() {
       } = await getSupabase().auth.getUser();
       if (!authUser) return;
 
-      if (activeTab === 'mywork') {
-        const { data: dealsData } = await getSupabase()
-          .from('deals')
-          .select('*')
-          .or(`freelancer_id.eq.${authUser.id},client_id.eq.${authUser.id}`)
-          .order('created_at', { ascending: false });
+      const supabase = getSupabase();
 
-        const clientIds = Array.from(new Set((dealsData || []).map((d) => d.client_id)));
-        const freelancerIds = Array.from(new Set((dealsData || []).map((d) => d.freelancer_id)));
-        const allUserIds = Array.from(new Set([...clientIds, ...freelancerIds]));
-
-        let profilesMap: any = {};
-        if (allUserIds.length > 0) {
-          const { data: profilesData } = await getSupabase()
-            .from('profiles')
-            .select('id, name, avatar_url, avg_rating, reviews_count, five_star_count, created_at')
-            .in('id', allUserIds);
-          profilesMap = Object.fromEntries((profilesData || []).map((p) => [p.id, p]));
-        }
-
-        setDeals(
-          (dealsData || []).map((d) => ({
-            ...d,
-            client: profilesMap[d.client_id],
-            freelancer: profilesMap[d.freelancer_id],
-            isMyOrder: d.client_id === authUser.id
-          }))
-        );
-      } else {
-        const { data: ordersData } = await getSupabase()
+      const [
+        { data: ordersData },
+        { data: tasksData },
+        { data: dealsData },
+        { data: activeDeals }
+      ] = await Promise.all([
+        supabase
           .from('orders')
           .select('*')
           .eq('user_id', authUser.id)
-          .order('created_at', { ascending: false });
-
-        const { data: tasksData } = await getSupabase()
+          .order('created_at', { ascending: false }),
+        supabase
           .from('tasks')
           .select('*')
           .eq('user_id', authUser.id)
-          .order('created_at', { ascending: false });
-
-        const { data: activeDeals } = await getSupabase()
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('deals')
+          .select('*')
+          .or(`freelancer_id.eq.${authUser.id},client_id.eq.${authUser.id}`)
+          .order('created_at', { ascending: false }),
+        supabase
           .from('deals')
           .select('order_id, task_id, id, status')
-          .neq('status', 'completed');
+          .neq('status', 'completed')
+      ]);
 
-        const ordersDealsMap = Object.fromEntries(
-          (activeDeals || []).filter((d) => d.order_id).map((d) => [d.order_id, d])
-        );
-        const tasksDealsMap = Object.fromEntries(
-          (activeDeals || []).filter((d) => d.task_id).map((d) => [d.task_id, d])
-        );
+      const ordersDealsMap = Object.fromEntries(
+        (activeDeals || []).filter((d) => d.order_id).map((d) => [d.order_id, d])
+      );
+      const tasksDealsMap = Object.fromEntries(
+        (activeDeals || []).filter((d) => d.task_id).map((d) => [d.task_id, d])
+      );
 
-        const enrichedOrders = (ordersData || []).map((o) => ({
-          ...o,
-          hasActiveDeal: !!ordersDealsMap[o.id],
-          activeDeal: ordersDealsMap[o.id]
-        }));
+      const enrichedOrders = (ordersData || []).map((o) => ({
+        ...o,
+        hasActiveDeal: !!ordersDealsMap[o.id],
+        activeDeal: ordersDealsMap[o.id]
+      }));
 
-        const enrichedTasks = (tasksData || []).map((t) => ({
-          ...t,
-          hasActiveDeal: !!tasksDealsMap[t.id],
-          activeDeal: tasksDealsMap[t.id]
-        }));
+      const enrichedTasks = (tasksData || []).map((t) => ({
+        ...t,
+        hasActiveDeal: !!tasksDealsMap[t.id],
+        activeDeal: tasksDealsMap[t.id]
+      }));
 
-        setOrders(enrichedOrders);
-        setTasks(enrichedTasks);
+      setOrders(enrichedOrders);
+      setTasks(enrichedTasks);
 
-        const orderIds = (ordersData || []).map((o) => o.id);
-        const taskIds = (tasksData || []).map((t) => t.id);
-        const allIds = [...orderIds, ...taskIds];
+      const clientIds = Array.from(new Set((dealsData || []).map((d) => d.client_id)));
+      const freelancerIds = Array.from(new Set((dealsData || []).map((d) => d.freelancer_id)));
+      const orderIds = (ordersData || []).map((o) => o.id);
+      const taskIds = (tasksData || []).map((t) => t.id);
 
-        if (allIds.length > 0) {
-          const { data: allProposalsData } = await getSupabase()
-            .from('proposals')
-            .select('*')
-            .or(
-              orderIds.length > 0 && taskIds.length > 0
-                ? `order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`
-                : orderIds.length > 0
-                ? `order_id.in.(${orderIds.join(',')})`
-                : `task_id.in.(${taskIds.join(',')})`
-            )
-            .order('created_at', { ascending: false });
+      const allUserIds = Array.from(new Set([...clientIds, ...freelancerIds]));
 
-          if (allProposalsData && allProposalsData.length > 0) {
-            const userIds = Array.from(new Set(allProposalsData.map((p) => p.user_id)));
-            const { data: profilesData } = await getSupabase()
+      const [
+        { data: profilesData },
+        { data: allProposalsData }
+      ] = await Promise.all([
+        allUserIds.length > 0
+          ? supabase
               .from('profiles')
               .select('id, name, avatar_url, avg_rating, reviews_count, five_star_count, created_at')
-              .in('id', userIds);
-
-            const profilesMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
-
-            const proposalsByItem: Record<string, Proposal[]> = {};
-
-            allProposalsData.forEach((p) => {
-              const itemId = p.order_id || p.task_id;
-              if (!proposalsByItem[itemId]) {
-                proposalsByItem[itemId] = [];
-              }
-              proposalsByItem[itemId].push({
-                ...p,
-                profile: profilesMap.get(p.user_id)
-              });
-            });
-
-            setProposals(proposalsByItem);
-
-            const allProposalIds = allProposalsData.map((p) => p.id);
-            const { data: optionsData } = await getSupabase()
-              .from('proposal_options')
+              .in('id', allUserIds)
+          : Promise.resolve({ data: [] }),
+        orderIds.length > 0 || taskIds.length > 0
+          ? supabase
+              .from('proposals')
               .select('*')
-              .in('proposal_id', allProposalIds)
-              .order('order_index', { ascending: true });
+              .or(
+                orderIds.length > 0 && taskIds.length > 0
+                  ? `order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`
+                  : orderIds.length > 0
+                  ? `order_id.in.(${orderIds.join(',')})`
+                  : `task_id.in.(${taskIds.join(',')})`
+              )
+              .order('created_at', { ascending: false })
+          : Promise.resolve({ data: [] })
+      ]);
 
-            if (optionsData) {
-              const optionsByProposal: Record<string, any[]> = {};
-              optionsData.forEach((opt) => {
-                if (!optionsByProposal[opt.proposal_id]) {
-                  optionsByProposal[opt.proposal_id] = [];
-                }
-                optionsByProposal[opt.proposal_id].push(opt);
-              });
-              setProposalOptions(optionsByProposal);
-            }
+      const profilesMap = Object.fromEntries((profilesData || []).map((p) => [p.id, p]));
+
+      setDeals(
+        (dealsData || []).map((d) => ({
+          ...d,
+          client: profilesMap[d.client_id],
+          freelancer: profilesMap[d.freelancer_id],
+          isMyOrder: d.client_id === authUser.id
+        }))
+      );
+
+      if (allProposalsData && allProposalsData.length > 0) {
+        const proposalUserIds = Array.from(new Set(allProposalsData.map((p) => p.user_id)));
+
+        const [
+          { data: proposalProfilesData },
+          { data: optionsData }
+        ] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, name, avatar_url, avg_rating, reviews_count, five_star_count, created_at')
+            .in('id', proposalUserIds),
+          supabase
+            .from('proposal_options')
+            .select('*')
+            .in('proposal_id', allProposalsData.map((p) => p.id))
+            .order('order_index', { ascending: true })
+        ]);
+
+        const proposalProfilesMap = new Map(proposalProfilesData?.map((p) => [p.id, p]) || []);
+        const proposalsByItem: Record<string, Proposal[]> = {};
+
+        allProposalsData.forEach((p) => {
+          const itemId = p.order_id || p.task_id;
+          if (!proposalsByItem[itemId]) {
+            proposalsByItem[itemId] = [];
           }
+          proposalsByItem[itemId].push({
+            ...p,
+            profile: proposalProfilesMap.get(p.user_id)
+          });
+        });
+
+        setProposals(proposalsByItem);
+
+        if (optionsData) {
+          const optionsByProposal: Record<string, any[]> = {};
+          optionsData.forEach((opt) => {
+            if (!optionsByProposal[opt.proposal_id]) {
+              optionsByProposal[opt.proposal_id] = [];
+            }
+            optionsByProposal[opt.proposal_id].push(opt);
+          });
+          setProposalOptions(optionsByProposal);
         }
       }
     } catch (error) {
