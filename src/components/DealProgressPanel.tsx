@@ -59,6 +59,44 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
 
   useEffect(() => {
     loadData();
+
+    // Realtime subscription for deal progress updates
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`deal_progress:${dealId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deals',
+          filter: `id=eq.${dealId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const updatedDeal = payload.new as Deal;
+            setDeal(updatedDeal);
+            setNewProgress(updatedDeal.current_progress || 0);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deal_progress_reports',
+          filter: `deal_id=eq.${dealId}`
+        },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [dealId]);
 
   const loadData = async () => {
@@ -116,13 +154,22 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       return;
     }
 
+    // Update deal progress
+    const updateData: any = {
+      current_progress: newProgress,
+      last_progress_update: new Date().toISOString(),
+      progress_reminder_sent: false
+    };
+
+    // If progress is 100%, automatically submit for review
+    if (newProgress === 100) {
+      updateData.status = 'submitted';
+      updateData.submitted_at = new Date().toISOString();
+    }
+
     const { error: dealError } = await supabase
       .from('deals')
-      .update({
-        current_progress: newProgress,
-        last_progress_update: new Date().toISOString(),
-        progress_reminder_sent: false
-      })
+      .update(updateData)
       .eq('id', dealId);
 
     if (dealError) {
@@ -131,10 +178,42 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       return;
     }
 
+    // Send system message to chat about progress update
+    if (chatId || deal?.chat_id) {
+      const messageContent = newProgress === 100
+        ? `Прогресс обновлен до ${newProgress}%. Сделка автоматически отправлена на проверку.`
+        : `Прогресс обновлен до ${newProgress}%`;
+
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId || deal?.chat_id,
+          sender_id: userId,
+          text: messageContent,
+          content: JSON.stringify({
+            type: 'progress_update',
+            progress: newProgress,
+            comment: newComment,
+            dealId: dealId
+          }),
+          type: 'system',
+          is_read: false
+        });
+
+      if (messageError) {
+        console.error('Error sending system message:', messageError);
+      }
+    }
+
     setNewComment('');
     await loadData();
     setLoading(false);
-    alert('Отчет успешно сохранен');
+
+    if (newProgress === 100) {
+      alert('Отчет сохранен! Сделка автоматически отправлена на проверку.');
+    } else {
+      alert('Отчет успешно сохранен');
+    }
   };
 
   const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
@@ -146,6 +225,85 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       .eq('id', taskId);
 
     if (!error) {
+      // Recalculate progress based on completed tasks
+      const { data: allTasks } = await supabase
+        .from('deal_task_items')
+        .select('is_completed')
+        .eq('deal_id', dealId);
+
+      if (allTasks && allTasks.length > 0) {
+        const completedCount = allTasks.filter(t => t.is_completed).length;
+        const progressPercentage = Math.round((completedCount / allTasks.length) * 100);
+
+        // Update deal progress
+        const updateData: any = {
+          current_progress: progressPercentage,
+          last_progress_update: new Date().toISOString(),
+          progress_reminder_sent: false
+        };
+
+        // If progress reaches 100%, automatically submit for review
+        if (progressPercentage === 100) {
+          updateData.status = 'submitted';
+          updateData.submitted_at = new Date().toISOString();
+        }
+
+        await supabase
+          .from('deals')
+          .update(updateData)
+          .eq('id', dealId);
+
+        // Send system message about task completion
+        if (chatId || deal?.chat_id) {
+          const { data: taskData } = await supabase
+            .from('deal_task_items')
+            .select('task_name')
+            .eq('id', taskId)
+            .maybeSingle();
+
+          const taskName = taskData?.task_name || 'Задача';
+          const messageContent = !currentStatus
+            ? `✓ ${taskName} - выполнено (прогресс: ${progressPercentage}%)`
+            : `✗ ${taskName} - снята отметка (прогресс: ${progressPercentage}%)`;
+
+          await supabase
+            .from('messages')
+            .insert({
+              chat_id: chatId || deal?.chat_id,
+              sender_id: userId,
+              text: messageContent,
+              content: JSON.stringify({
+                type: 'task_update',
+                taskId: taskId,
+                taskName: taskName,
+                isCompleted: !currentStatus,
+                progress: progressPercentage,
+                dealId: dealId
+              }),
+              type: 'system',
+              is_read: false
+            });
+
+          // If 100%, add submission message
+          if (progressPercentage === 100) {
+            await supabase
+              .from('messages')
+              .insert({
+                chat_id: chatId || deal?.chat_id,
+                sender_id: userId,
+                text: 'Все задачи выполнены! Сделка автоматически отправлена на проверку.',
+                content: JSON.stringify({
+                  type: 'auto_submit',
+                  progress: 100,
+                  dealId: dealId
+                }),
+                type: 'system',
+                is_read: false
+              });
+          }
+        }
+      }
+
       await loadData();
     }
   };
