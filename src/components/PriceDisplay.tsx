@@ -97,20 +97,20 @@ export default function PriceDisplay({ amount, fromCurrency, currency, className
 
       return (
         <div className={`flex flex-wrap items-center gap-1 md:gap-2 ${className}`}>
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex items-center gap-1">
             <span className="line-through text-red-500 text-sm whitespace-nowrap">
               {minPrice.formatted}
             </span>
-            <span className="line-through text-red-500 text-sm hidden sm:inline">–</span>
+            <span className="line-through text-red-500 text-sm whitespace-nowrap">–</span>
             <span className="line-through text-red-500 text-sm whitespace-nowrap">
               {maxPrice.formatted}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex items-center gap-1">
             <span className="font-semibold whitespace-nowrap">
               {discountedMinPrice.formatted}
             </span>
-            <span className="font-semibold hidden sm:inline">–</span>
+            <span className="font-semibold whitespace-nowrap">–</span>
             <span className="font-semibold whitespace-nowrap">
               {discountedMaxPrice.formatted}
             </span>
@@ -123,11 +123,11 @@ export default function PriceDisplay({ amount, fromCurrency, currency, className
     }
 
     return (
-      <div className={`flex flex-wrap items-center gap-1 md:gap-1.5 ${className}`}>
+      <div className={`flex items-center gap-1 md:gap-1.5 ${className}`}>
         <span className="font-semibold whitespace-nowrap">
           {minPrice.formatted}
         </span>
-        <span className="font-semibold hidden sm:inline">–</span>
+        <span className="font-semibold whitespace-nowrap">–</span>
         <span className="font-semibold whitespace-nowrap">
           {maxPrice.formatted}
         </span>

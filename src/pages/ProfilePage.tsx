@@ -2010,17 +2010,26 @@ export default function ProfilePage() {
                                             <NoTranslate className="text-sm text-[#3F7F6E] line-clamp-2 mb-3">{order.description}</NoTranslate>
                                             {rec.match_reasons && rec.match_reasons.length > 0 && (
                                               <div className="space-y-1 mb-3">
-                                                {rec.match_reasons.slice(0, 2).map((reason: any, idx: number) => (
-                                                  <div key={idx} className="flex items-start gap-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#6FE7C8] mt-1.5 flex-shrink-0"></div>
-                                                    <NoTranslate as="p" className="text-xs text-gray-600">{reason.value}</NoTranslate>
-                                                  </div>
-                                                ))}
+                                                {rec.match_reasons.slice(0, 2).map((reason: any, idx: number) => {
+                                                  const parts = reason.value.split(':');
+                                                  const translatable = parts[0] + ':';
+                                                  const nonTranslatable = parts.slice(1).join(':');
+
+                                                  return (
+                                                    <div key={idx} className="flex items-start gap-2">
+                                                      <div className="w-1.5 h-1.5 rounded-full bg-[#6FE7C8] mt-1.5 flex-shrink-0"></div>
+                                                      <p className="text-xs text-gray-600">
+                                                        {translatable}
+                                                        <NoTranslate as="span">{nonTranslatable}</NoTranslate>
+                                                      </p>
+                                                    </div>
+                                                  );
+                                                })}
                                               </div>
                                             )}
                                           </CardContent>
-                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-t">
-                                            <div className="flex-shrink-0">
+                                          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t">
+                                            <div className="flex-shrink">
                                               <PriceDisplay
                                                 amount={order.price_min}
                                                 maxAmount={order.price_max}

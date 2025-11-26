@@ -506,12 +506,21 @@ export default function RecommendationsPage() {
                       {/* Match Reasons */}
                       {rec.match_reasons && rec.match_reasons.length > 0 && (
                         <div className="mb-4 space-y-1">
-                          {rec.match_reasons.slice(0, 2).map((reason, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
-                              <NoTranslate as="p" className="text-xs text-gray-600">{reason.value}</NoTranslate>
-                            </div>
-                          ))}
+                          {rec.match_reasons.slice(0, 2).map((reason, idx) => {
+                            const parts = reason.value.split(':');
+                            const translatable = parts[0] + ':';
+                            const nonTranslatable = parts.slice(1).join(':');
+
+                            return (
+                              <div key={idx} className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#3F7F6E] mt-1.5 flex-shrink-0"></div>
+                                <p className="text-xs text-gray-600">
+                                  {translatable}
+                                  <NoTranslate as="span">{nonTranslatable}</NoTranslate>
+                                </p>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
