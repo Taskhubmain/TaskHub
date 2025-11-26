@@ -222,14 +222,34 @@ export default function WalletPage() {
     if (!user) return;
 
     try {
-      const { data, error } = await getSupabase()
+      // Load wallet data
+      const { data: walletData, error: walletError } = await getSupabase()
         .from('wallets')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
-      setWallet(data);
+      if (walletError) throw walletError;
+
+      // Load wallet stats (total_earned from wallet_ledger)
+      const { data: statsData, error: statsError } = await getSupabase()
+        .from('wallet_stats')
+        .select('total_earned, total_deposited, total_withdrawn')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (statsError) {
+        console.error('Error loading wallet stats:', statsError);
+      }
+
+      // Merge wallet data with stats
+      if (walletData) {
+        setWallet({
+          ...walletData,
+          total_earned: statsData?.total_earned || 0,
+          total_withdrawn: statsData?.total_withdrawn || walletData.total_withdrawn
+        });
+      }
     } catch (error) {
       console.error('Error loading wallet:', error);
     } finally {
