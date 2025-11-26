@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -13,7 +13,9 @@ import {
   ChevronUp,
   Loader2,
   Briefcase,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,6 +98,8 @@ interface Task {
   };
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function MyDealsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('orders');
@@ -112,6 +116,11 @@ export default function MyDealsPage() {
     orderId?: string;
     taskId?: string;
   }>({ open: false });
+  const [currentPage, setCurrentPage] = useState<Record<Tab, number>>({
+    orders: 1,
+    tasks: 1,
+    mywork: 1
+  });
 
   useEffect(() => {
     if (user) {
@@ -441,6 +450,92 @@ export default function MyDealsPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  // Пагинация для заказов
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage.orders - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return orders.slice(start, end);
+  }, [orders, currentPage.orders]);
+
+  const ordersTotalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+
+  // Пагинация для задач
+  const paginatedTasks = useMemo(() => {
+    const start = (currentPage.tasks - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return tasks.slice(start, end);
+  }, [tasks, currentPage.tasks]);
+
+  const tasksTotalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
+
+  // Пагинация для моей работы
+  const paginatedDeals = useMemo(() => {
+    const start = (currentPage.mywork - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return deals.slice(start, end);
+  }, [deals, currentPage.mywork]);
+
+  const dealsTotalPages = Math.ceil(deals.length / ITEMS_PER_PAGE);
+
+  const handlePageChange = (tab: Tab, page: number) => {
+    setCurrentPage(prev => ({ ...prev, [tab]: page }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = (tab: Tab, totalPages: number) => {
+    if (totalPages <= 1) return null;
+
+    const currentTabPage = currentPage[tab];
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(tab, currentTabPage - 1)}
+          disabled={currentTabPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="flex gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+            // Показываем первую, последнюю, текущую и соседние страницы
+            if (
+              page === 1 ||
+              page === totalPages ||
+              (page >= currentTabPage - 1 && page <= currentTabPage + 1)
+            ) {
+              return (
+                <Button
+                  key={page}
+                  variant={page === currentTabPage ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePageChange(tab, page)}
+                  className="min-w-[40px]"
+                >
+                  {page}
+                </Button>
+              );
+            } else if (page === currentTabPage - 2 || page === currentTabPage + 2) {
+              return <span key={page} className="px-2">...</span>;
+            }
+            return null;
+          })}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(tab, currentTabPage + 1)}
+          disabled={currentTabPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <motion.div
       initial="initial"
@@ -455,7 +550,10 @@ export default function MyDealsPage() {
 
         <div className="flex border-b mb-6 overflow-x-auto scrollbar-hide">
           <button
-            onClick={() => setActiveTab('orders')}
+            onClick={() => {
+              setActiveTab('orders');
+              setCurrentPage(prev => ({ ...prev, orders: 1 }));
+            }}
             className={`relative px-3 xs-375:px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'orders'
                 ? 'text-[#6FE7C8]'
@@ -472,7 +570,10 @@ export default function MyDealsPage() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab('tasks')}
+            onClick={() => {
+              setActiveTab('tasks');
+              setCurrentPage(prev => ({ ...prev, tasks: 1 }));
+            }}
             className={`relative px-3 xs-375:px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'tasks'
                 ? 'text-[#6FE7C8]'
@@ -489,7 +590,10 @@ export default function MyDealsPage() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab('mywork')}
+            onClick={() => {
+              setActiveTab('mywork');
+              setCurrentPage(prev => ({ ...prev, mywork: 1 }));
+            }}
             className={`relative px-3 xs-375:px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'mywork'
                 ? 'text-[#6FE7C8]'
@@ -535,8 +639,9 @@ export default function MyDealsPage() {
                 </CardContent>
               </Card>
             ) : (
-              orders.map((order) => (
-                <Card key={order.id} className="hover:shadow-lg transition-shadow">
+              <>
+                {paginatedOrders.map((order) => (
+                  <Card key={order.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-3 xs-375:p-4 sm:p-6">
                     {/* MOBILE VERSION */}
                     <div className="sm:hidden">
@@ -888,7 +993,9 @@ export default function MyDealsPage() {
                     </AnimatePresence>
                   </CardContent>
                 </Card>
-              ))
+              ))}
+              {renderPagination('orders', ordersTotalPages)}
+              </>
             )}
           </div>
         ) : activeTab === 'tasks' ? (
@@ -914,8 +1021,9 @@ export default function MyDealsPage() {
                 </CardContent>
               </Card>
             ) : (
-              tasks.map((task) => (
-                <Card key={task.id} className="hover:shadow-lg transition-shadow">
+              <>
+                {paginatedTasks.map((task) => (
+                  <Card key={task.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-3 xs-375:p-4 sm:p-6">
                     {/* MOBILE VERSION */}
                     <div className="sm:hidden">
@@ -1262,7 +1370,9 @@ export default function MyDealsPage() {
                     </AnimatePresence>
                   </CardContent>
                 </Card>
-              ))
+              ))}
+              {renderPagination('tasks', tasksTotalPages)}
+              </>
             )}
           </div>
         ) : activeTab === 'mywork' ? (
@@ -1277,11 +1387,12 @@ export default function MyDealsPage() {
                 </CardContent>
               </Card>
             ) : (
-              deals.map((deal) => (
-                <Card
-                  key={deal.id}
-                  className="hover:shadow-lg transition-shadow relative overflow-hidden"
-                >
+              <>
+                {paginatedDeals.map((deal) => (
+                  <Card
+                    key={deal.id}
+                    className="hover:shadow-lg transition-shadow relative overflow-hidden"
+                  >
                   {deal.isMyOrder && (
                     <div
                       className="absolute top-0 right-0 bg-gradient-to-l from-[#6FE7C8] to-[#4ECDB0] text-white px-4 xs-375:px-6 py-1 text-[10px] xs-375:text-xs font-semibold shadow-md"
@@ -1435,7 +1546,9 @@ export default function MyDealsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))
+              ))}
+              {renderPagination('mywork', dealsTotalPages)}
+              </>
             )}
           </div>
         ) : null}
