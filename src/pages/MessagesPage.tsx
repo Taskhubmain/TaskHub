@@ -35,8 +35,6 @@ import { queryWithRetry, subscribeWithMonitoring } from '@/lib/supabase-utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { navigateToProfile } from '@/lib/navigation';
 import { MediaEditor } from '@/components/MediaEditor';
-import { useContentModeration } from '@/hooks/useContentModeration';
-import { ModerationAlert } from '@/components/ui/ModerationAlert';
 import { ImageViewer } from '@/components/ImageViewer';
 import { ChatCRMPanel } from '@/components/ChatCRMPanel';
 import { CRMConfirmation } from '@/components/CRMConfirmation';
@@ -118,9 +116,6 @@ export default function MessagesPage() {
   const [isUserBlocked, setIsUserBlocked] = useState(false);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
 
-  const { isBlocked, blockMessage, checkContent, checkContentImmediate } = useContentModeration({
-    contentType: 'message',
-  });
   const [crmPanelOpen, setCrmPanelOpen] = useState(false);
   const [progressPanelOpen, setProgressPanelOpen] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -1829,8 +1824,6 @@ export default function MessagesPage() {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <ModerationAlert message={blockMessage} isVisible={isBlocked} />
-
                       <form onSubmit={handleSendMessage} className="flex gap-2">
                         <input
                           type="file"
@@ -1849,7 +1842,6 @@ export default function MessagesPage() {
                           onChange={(e) => {
                             setMessage(e.target.value);
                             setTranslatedInput('');
-                            checkContent(e.target.value);
                             if (e.target.value.trim()) sendTypingIndicator();
                             autosize();
                           }}
@@ -1878,7 +1870,7 @@ export default function MessagesPage() {
                           </Button>
                         )}
 
-                        <Button type="submit" disabled={(!message.trim() && !selectedFile) || uploading || isBlocked || translating}>
+                        <Button type="submit" disabled={(!message.trim() && !selectedFile) || uploading || translating}>
                           <Send className="h-4 w-4" />
                         </Button>
                       </form>
