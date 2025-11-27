@@ -78,71 +78,24 @@ export default function SubscriptionPurchaseDialog({
         return;
       }
 
-      const newBalance = profile.balance - plan.priceUSD;
+      // Use RPC function for atomic subscription purchase
+      const { data: result, error: purchaseError } = await supabase
+        .rpc('purchase_subscription', {
+          p_user_id: user.id,
+          p_plan_type: selectedPlan,
+          p_days: plan.days,
+          p_price: plan.priceUSD,
+          p_plan_name: plan.name,
+          p_currency: 'usd'
+        });
 
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', user.id);
-
-      if (balanceError) throw balanceError;
-
-      // Update wallets table to keep in sync
-      await supabase
-        .from('wallets')
-        .update({
-          balance: newBalance,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-
-      const { data: existingSub } = await supabase
-        .from('recommendations_subscriptions')
-        .select('expires_at, is_active')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('expires_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      let expiresAt: Date;
-
-      if (existingSub && new Date(existingSub.expires_at) > new Date()) {
-        expiresAt = new Date(existingSub.expires_at);
-        expiresAt.setDate(expiresAt.getDate() + plan.days);
-      } else {
-        expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + plan.days);
+      if (purchaseError) {
+        throw purchaseError;
       }
 
-      const { error: subError } = await supabase
-        .from('recommendations_subscriptions')
-        .insert({
-          user_id: user.id,
-          plan_type: selectedPlan,
-          expires_at: expiresAt.toISOString(),
-          price_paid: plan.priceUSD,
-          is_active: true,
-        });
-
-      if (subError) throw subError;
-
-      const { error: ledgerError } = await supabase
-        .from('wallet_ledger')
-        .insert({
-          user_id: user.id,
-          kind: 'purchase',
-          status: 'completed',
-          amount_minor: Math.round(-plan.priceUSD * 100),
-          currency: 'usd',
-          metadata: {
-            plan_type: selectedPlan,
-            days: plan.days,
-            description: `Подписка на рекомендации заказов (${plan.name})`
-          },
-        });
-
-      if (ledgerError) throw ledgerError;
+      if (!result?.success) {
+        throw new Error(result?.error || 'Не удалось выполнить покупку');
+      }
 
       console.log('[SubscriptionPurchase] Purchase completed successfully');
 
