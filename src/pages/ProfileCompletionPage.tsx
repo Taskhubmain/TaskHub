@@ -3,11 +3,13 @@ import { Camera, Upload, X } from 'lucide-react';
 import { getSupabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { MediaEditor } from '../components/MediaEditor';
+import { useWeglot } from '../hooks/useWeglot';
 
 const DEFAULT_AVATAR = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%236FE7C8"/%3E%3Ctext x="100" y="140" font-family="Arial,sans-serif" font-size="120" font-weight="bold" fill="%233F7F6E" text-anchor="middle"%3ET%3C/text%3E%3C/svg%3E';
 
 export default function ProfileCompletionPage() {
   const { user } = useAuth();
+  const { t } = useWeglot();
   const [loading, setLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(DEFAULT_AVATAR);
@@ -152,17 +154,17 @@ export default function ProfileCompletionPage() {
       }
 
       const updateData: any = {
-        specialty: formData.specialty || 'не указана',
+        specialty: formData.specialty || t('profileCompletion.notSpecifiedFem'),
         experience_years: parseInt(formData.experience_years) || 0,
         age: parseInt(formData.age) || null,
         rate_min: parseInt(formData.rate_min) || 0,
         rate_max: parseInt(formData.rate_max) || 0,
         currency: formData.currency,
-        skills: formData.skills.length > 0 ? formData.skills : ['не указаны'],
-        location: formData.location || 'не указана',
-        contact_telegram: formData.contact_telegram || 'не указан',
-        contact_gmail: formData.contact_gmail || 'не указан',
-        bio: formData.bio || 'Привет! Я использую TaskHub',
+        skills: formData.skills.length > 0 ? formData.skills : [t('profileCompletion.notSpecifiedPlural')],
+        location: formData.location || t('profileCompletion.notSpecifiedFem'),
+        contact_telegram: formData.contact_telegram || t('profileCompletion.notSpecifiedMasc'),
+        contact_gmail: formData.contact_gmail || t('profileCompletion.notSpecifiedMasc'),
+        bio: formData.bio || t('profileCompletion.defaultBio'),
         profile_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -303,7 +305,7 @@ export default function ProfileCompletionPage() {
                       setAgeError('');
                     }
                   }}
-                  placeholder="Не указано"
+                  placeholder={t('profileCompletion.notSpecified')}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent ${
                     ageError ? 'border-red-500' : 'border-gray-300'
                   }`}

@@ -1720,7 +1720,7 @@ export default function MessagesPage() {
                           <div key={msg.id}>
                             <div className="flex justify-center my-4">
                               <div className="max-w-[80%] rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                                <div className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words" data-wg-notranslate>
+                                <div className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words">
                                   {msg.content || msg.text}
                                 </div>
                                 <div className="text-xs text-amber-700 text-center mt-2">

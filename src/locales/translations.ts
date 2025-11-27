@@ -87,6 +87,13 @@ export const translations = {
     'proposal.proposedPrice': 'Предложенная цена',
     'proposal.deliveryTime': 'Срок выполнения',
     'proposal.submit': 'Отправить отклик',
+
+    // Profile Completion
+    'profileCompletion.notSpecified': 'не указано',
+    'profileCompletion.notSpecifiedFem': 'не указана',
+    'profileCompletion.notSpecifiedPlural': 'не указаны',
+    'profileCompletion.notSpecifiedMasc': 'не указан',
+    'profileCompletion.defaultBio': 'Привет! Я использую TaskHub',
   },
   en: {
     // Auth
@@ -176,6 +183,13 @@ export const translations = {
     'proposal.proposedPrice': 'Proposed Price',
     'proposal.deliveryTime': 'Delivery Time',
     'proposal.submit': 'Submit Proposal',
+
+    // Profile Completion
+    'profileCompletion.notSpecified': 'not specified',
+    'profileCompletion.notSpecifiedFem': 'not specified',
+    'profileCompletion.notSpecifiedPlural': 'not specified',
+    'profileCompletion.notSpecifiedMasc': 'not specified',
+    'profileCompletion.defaultBio': 'Hello! I\'m using TaskHub',
   }
 };
 
