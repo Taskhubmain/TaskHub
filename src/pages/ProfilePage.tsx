@@ -405,11 +405,22 @@ export default function ProfilePage() {
     }, {} as Record<string, number>);
     const repeatCount = Object.values(clientCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
 
-    const { data: proposalsData } = await supabase
+    // Получаем proposals с join к orders и tasks для расчета времени отклика
+    const { data: proposalsData, error: proposalsError } = await supabase
       .from('proposals')
-      .select('created_at, order_id, task_id')
+      .select(`
+        created_at,
+        order_id,
+        task_id,
+        orders(created_at),
+        tasks(created_at)
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: true });
+
+    if (proposalsError) {
+      console.error('Error loading proposals for response time:', proposalsError);
+    }
 
     let avgResponseTimeStr = 'N/A';
     if (proposalsData && proposalsData.length > 0) {
@@ -418,20 +429,11 @@ export default function ProfilePage() {
       for (const proposal of proposalsData) {
         let itemCreatedAt: string | null = null;
 
-        if (proposal.order_id) {
-          const { data: orderData } = await supabase
-            .from('orders')
-            .select('created_at')
-            .eq('id', proposal.order_id)
-            .maybeSingle();
-          itemCreatedAt = orderData?.created_at;
-        } else if (proposal.task_id) {
-          const { data: taskData } = await supabase
-            .from('tasks')
-            .select('created_at')
-            .eq('id', proposal.task_id)
-            .maybeSingle();
-          itemCreatedAt = taskData?.created_at;
+        // Получаем created_at из joined данных
+        if (proposal.order_id && proposal.orders) {
+          itemCreatedAt = (proposal.orders as any)?.created_at;
+        } else if (proposal.task_id && proposal.tasks) {
+          itemCreatedAt = (proposal.tasks as any)?.created_at;
         }
 
         if (itemCreatedAt) {
