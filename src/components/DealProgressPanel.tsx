@@ -188,18 +188,18 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
         progress: newProgress
       }, language as 'en' | 'ru');
 
+      // Add comment to message if provided
+      let fullMessage = messageContent;
+      if (newComment.trim()) {
+        fullMessage += '\n\n' + (language === 'ru' ? 'Комментарий: ' : 'Comment: ') + newComment;
+      }
+
       const { error: messageError } = await supabase
         .from('messages')
         .insert({
           chat_id: chatId || deal?.chat_id,
           sender_id: userId,
-          text: messageContent,
-          content: JSON.stringify({
-            type: 'progress_update',
-            progress: newProgress,
-            comment: newComment,
-            dealId: dealId
-          }),
+          text: fullMessage,
           type: 'system',
           is_read: false
         });
@@ -541,7 +541,6 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
             <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
               <motion.div
                 className="bg-gradient-to-r from-[#6FE7C8] to-[#3F7F6E] h-4 rounded-full"
-                initial={{ width: 0 }}
                 animate={{ width: `${deal?.current_progress || 0}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />

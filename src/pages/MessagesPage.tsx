@@ -165,11 +165,11 @@ export default function MessagesPage() {
 
     const translateAllMessages = async () => {
       const messagesToTranslate = messages.filter(
-        (msg) => (msg.content || msg.text) && !translatedMessages[msg.id]
+        (msg) => (msg.text || msg.content) && !translatedMessages[msg.id]
       );
 
       for (const msg of messagesToTranslate) {
-        const textToTranslate = msg.content || msg.text;
+        const textToTranslate = msg.text || msg.content;
         if (textToTranslate) {
           const translated = await translateText(textToTranslate, language);
           setTranslatedMessages((prev) => ({ ...prev, [msg.id]: translated }));
@@ -1722,7 +1722,7 @@ export default function MessagesPage() {
                             <div className="flex justify-center my-4">
                               <div className="max-w-[80%] rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
                                 <SystemMessage
-                                  message={msg.content || msg.text}
+                                  message={msg.text || msg.content}
                                   className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words"
                                 />
                                 <div className="text-xs text-amber-700 text-center mt-2">
@@ -1778,10 +1778,10 @@ export default function MessagesPage() {
                                 </div>
                               </a>
                             )}
-                            {(msg.content || msg.text) && (
+                            {(msg.text || msg.content) && (
                               <div className="p-3">
                                 <div className="text-sm whitespace-pre-wrap break-words chat-message" data-wg-notranslate>
-                                  {translateChat ? (translatedMessages[msg.id] || msg.content || msg.text) : (msg.content || msg.text)}
+                                  {translateChat ? (translatedMessages[msg.id] || msg.text || msg.content) : (msg.text || msg.content)}
                                 </div>
                               </div>
                             )}
