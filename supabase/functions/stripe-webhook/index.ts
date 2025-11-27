@@ -140,98 +140,25 @@ Deno.serve(async (req: Request) => {
       const amount = parseFloat(transaction.amount);
       console.log("Processing amount:", amount);
 
-      const wasExpired = transaction.status === "expired";
-      let newDescription = transaction.description;
+      // Use RPC function to atomically process deposit
+      // This ensures profiles.balance and wallets.balance stay synchronized
+      const { data: result, error: processError } = await supabase
+        .rpc("process_stripe_deposit", {
+          p_transaction_id: transaction_id,
+          p_amount: amount
+        });
 
-      if (wasExpired) {
-        console.log("Transaction was expired, but payment completed - accepting late payment");
-        newDescription = transaction.description
-          ? `${transaction.description} (оплачено после истечения 20-минутного ожидания)`
-          : "Stripe пополнение кошелька (оплачено после истечения 20-минутного ожидания)";
+      if (processError) {
+        console.error("Failed to process deposit:", processError.message);
+        throw processError;
       }
 
-      const { error: updateError } = await supabase
-        .from("transactions")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          provider_status: "succeeded",
-          description: newDescription,
-        })
-        .eq("id", transaction_id);
-
-      if (updateError) {
-        console.error("Failed to update transaction:", updateError.message);
-        throw updateError;
+      if (!result.success) {
+        console.error("Deposit processing failed:", result.error);
+        throw new Error(result.error);
       }
 
-      console.log("Transaction status updated to completed");
-
-      const { data: wallet, error: walletError } = await supabase
-        .from("wallets")
-        .select("balance, total_earned")
-        .eq("id", wallet_id)
-        .single();
-
-      if (walletError) {
-        console.error("Failed to fetch wallet:", walletError.message);
-        throw walletError;
-      }
-
-      if (wallet) {
-        const newBalance = parseFloat(wallet.balance) + amount;
-        const newTotalEarned = parseFloat(wallet.total_earned) + amount;
-
-        console.log("Updating wallet balance from", wallet.balance, "to", newBalance);
-
-        const { error: walletUpdateError } = await supabase
-          .from("wallets")
-          .update({
-            balance: newBalance,
-            total_earned: newTotalEarned,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", wallet_id);
-
-        if (walletUpdateError) {
-          console.error("Failed to update wallet:", walletUpdateError.message);
-          throw walletUpdateError;
-        }
-
-        console.log("Wallet updated successfully");
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("balance")
-        .eq("id", user_id)
-        .single();
-
-      if (profileError) {
-        console.error("Failed to fetch profile:", profileError.message);
-        throw profileError;
-      }
-
-      if (profile) {
-        const newProfileBalance = parseFloat(profile.balance) + amount;
-
-        console.log("Updating profile balance from", profile.balance, "to", newProfileBalance);
-
-        const { error: profileUpdateError } = await supabase
-          .from("profiles")
-          .update({
-            balance: newProfileBalance,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user_id);
-
-        if (profileUpdateError) {
-          console.error("Failed to update profile:", profileUpdateError.message);
-          throw profileUpdateError;
-        }
-
-        console.log("Profile updated successfully");
-      }
+      console.log("Deposit processed successfully:", result);
 
       // Add entry to wallet_ledger for accurate total_deposited tracking
       const amountMinor = Math.round(amount * 100);
