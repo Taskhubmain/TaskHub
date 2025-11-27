@@ -58,7 +58,7 @@ export default function ProfileBadges({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap mt-1">
         {renderStars()}
         {isMaster && (
           <Badge variant="default" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 text-xs">
