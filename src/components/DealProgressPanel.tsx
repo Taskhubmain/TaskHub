@@ -91,8 +91,14 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
           table: 'deal_progress_reports',
           filter: `deal_id=eq.${dealId}`
         },
-        () => {
-          loadData();
+        (payload) => {
+          // Add new report to the list immediately
+          const newReport = payload.new as ProgressReport;
+          setProgressReports(prev => [...prev, newReport].sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          ));
+          // Auto-expand reports section when new report arrives
+          setReportsExpanded(true);
         }
       )
       .subscribe();
