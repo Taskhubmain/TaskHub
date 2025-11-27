@@ -11,6 +11,8 @@ import { getSupabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { navigateToProfile } from '@/lib/navigation';
 import { optimizeImage } from '@/lib/image-optimization';
+import { useRegion } from '@/contexts/RegionContext';
+import { getSystemMessage, getItemType, formatSystemDate } from '@/lib/system-messages';
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -22,6 +24,7 @@ const pageTransition = { type: 'spring' as const, stiffness: 140, damping: 20, m
 
 export default function ProposalsPage() {
   const { user } = useAuth();
+  const { language } = useRegion();
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<any>(null);
@@ -427,10 +430,18 @@ export default function ProposalsPage() {
 
       const clientName = clientProfile?.name || 'Пользователь';
       const freelancerName = freelancerProfile?.name || 'Пользователь';
-      const acceptedDate = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-      const itemType = proposal.order_id ? 'Заказ' : 'Объявление';
+      const acceptedDate = formatSystemDate(new Date(), language as 'en' | 'ru');
+      const itemType = getItemType(!!proposal.order_id, language as 'en' | 'ru');
 
-      const systemMessage = `${itemType} "${item.title}" был принят ${acceptedDate} за ${proposal.price} ${proposal.currency}, заказчик - ${clientName}, исполнитель - ${freelancerName}.\nУдачной сделки!`;
+      const systemMessage = getSystemMessage('dealAccepted', {
+        itemType,
+        title: item.title,
+        date: acceptedDate,
+        price: proposal.price,
+        currency: proposal.currency,
+        clientName,
+        freelancerName
+      }, language as 'en' | 'ru');
 
       const { error: messageError } = await supabase
         .from('messages')

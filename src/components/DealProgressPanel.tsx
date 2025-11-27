@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Send, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '../lib/supabaseClient';
 import { ReviewInChat } from './ReviewInChat';
+import { useRegion } from '../contexts/RegionContext';
+import { getSystemMessage } from '../lib/system-messages';
 
 interface DealProgressPanelProps {
   dealId: string;
@@ -43,6 +45,7 @@ interface Deal {
 }
 
 export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId, freelancerId }: DealProgressPanelProps) {
+  const { language } = useRegion();
   const [deal, setDeal] = useState<Deal | null>(null);
   const [progressReports, setProgressReports] = useState<ProgressReport[]>([]);
   const [taskItems, setTaskItems] = useState<TaskItem[]>([]);
@@ -180,9 +183,10 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
 
     // Send system message to chat about progress update
     if (chatId || deal?.chat_id) {
-      const messageContent = newProgress === 100
-        ? `Прогресс обновлен до ${newProgress}%. Сделка автоматически отправлена на проверку.`
-        : `Прогресс обновлен до ${newProgress}%`;
+      const templateKey = newProgress === 100 ? 'progressUpdateWithSubmission' : 'progressUpdate';
+      const messageContent = getSystemMessage(templateKey, {
+        progress: newProgress
+      }, language as 'en' | 'ru');
 
       const { error: messageError } = await supabase
         .from('messages')
@@ -262,9 +266,11 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
             .maybeSingle();
 
           const taskName = taskData?.task_name || 'Задача';
-          const messageContent = !currentStatus
-            ? `✓ ${taskName} - выполнено (прогресс: ${progressPercentage}%)`
-            : `✗ ${taskName} - снята отметка (прогресс: ${progressPercentage}%)`;
+          const templateKey = !currentStatus ? 'taskCompleted' : 'taskUncompleted';
+          const messageContent = getSystemMessage(templateKey, {
+            taskName,
+            progress: progressPercentage
+          }, language as 'en' | 'ru');
 
           await supabase
             .from('messages')
@@ -286,12 +292,13 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
 
           // If 100%, add submission message
           if (progressPercentage === 100) {
+            const submissionMessage = getSystemMessage('allTasksCompleted', {}, language as 'en' | 'ru');
             await supabase
               .from('messages')
               .insert({
                 chat_id: chatId || deal?.chat_id,
                 sender_id: userId,
-                text: 'Все задачи выполнены! Сделка автоматически отправлена на проверку.',
+                text: submissionMessage,
                 content: JSON.stringify({
                   type: 'auto_submit',
                   progress: 100,
@@ -369,12 +376,13 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       return;
     }
 
+    const submittedMessage = getSystemMessage('workSubmitted', {}, language as 'en' | 'ru');
     const { error: messageError } = await supabase
       .from('messages')
       .insert({
         chat_id: targetChatId,
         sender_id: userId,
-        text: 'Заказ сдан на проверку, если работа выполнена - подтвердите завершение заказа.',
+        text: submittedMessage,
         is_system: true,
         system_type: 'deal_submitted'
       });
@@ -434,12 +442,13 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       alert(`Работа принята, но перевод средств не выполнен: ${escrowResult.error}`);
     }
 
+    const confirmedMessage = getSystemMessage('workConfirmed', {}, language as 'en' | 'ru');
     const { error: messageError } = await supabase
       .from('messages')
       .insert({
         chat_id: targetChatId,
         sender_id: userId,
-        text: 'Работа подтверждена',
+        text: confirmedMessage,
         is_system: true,
         system_type: 'work_accepted'
       });
