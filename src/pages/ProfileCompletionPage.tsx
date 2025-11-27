@@ -166,17 +166,17 @@ export default function ProfileCompletionPage() {
       }
 
       const updateData: any = {
-        specialty: formData.specialty || t('profileCompletion.notSpecifiedFem'),
+        specialty: formData.specialty || null,
         experience_years: parseInt(formData.experience_years) || 0,
         age: parseInt(formData.age) || null,
         rate_min: parseInt(formData.rate_min) || 0,
         rate_max: parseInt(formData.rate_max) || 0,
         currency: formData.currency,
-        skills: formData.skills.length > 0 ? formData.skills : [t('profileCompletion.notSpecifiedPlural')],
-        location: formData.location || t('profileCompletion.notSpecifiedFem'),
-        contact_telegram: formData.contact_telegram || t('profileCompletion.notSpecifiedMasc'),
-        contact_gmail: formData.contact_gmail || t('profileCompletion.notSpecifiedMasc'),
-        bio: formData.bio || t('profileCompletion.defaultBio'),
+        skills: formData.skills.length > 0 ? formData.skills : [],
+        location: formData.location || null,
+        contact_telegram: formData.contact_telegram || null,
+        contact_gmail: formData.contact_gmail || null,
+        bio: formData.bio || null,
         profile_completed: true,
         updated_at: new Date().toISOString(),
       };
