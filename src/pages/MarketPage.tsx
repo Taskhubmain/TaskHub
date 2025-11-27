@@ -487,7 +487,7 @@ export default function MarketPage() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-1 px-6">
+                    <CardContent className="flex-1 px-6 pt-4">
                       <div className="flex flex-wrap gap-2 mb-4">
                         {(item.tags || []).map((t: string) => (
                           <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
