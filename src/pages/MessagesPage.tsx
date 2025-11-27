@@ -40,6 +40,7 @@ import { ChatCRMPanel } from '@/components/ChatCRMPanel';
 import { CRMConfirmation } from '@/components/CRMConfirmation';
 import DealProgressPanel from '@/components/DealProgressPanel';
 import { ReviewInChat } from '@/components/ReviewInChat';
+import { SystemMessage } from '@/components/SystemMessage';
 import { useRegion } from '@/contexts/RegionContext';
 
 const pageVariants = { initial: { opacity: 0 }, in: { opacity: 1 }, out: { opacity: 0 } };
@@ -1542,7 +1543,7 @@ export default function MessagesPage() {
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                       <Briefcase className="h-3 w-3 text-[#3F7F6E] flex-shrink-0" />
-                                      <span className="text-sm truncate">{dealTitle}</span>
+                                      <span className="text-sm truncate" data-wg-notranslate>{dealTitle}</span>
                                     </div>
                                     {dealUnread > 0 && (
                                       <div className="h-5 min-w-5 px-1.5 rounded-full bg-[#6FE7C8] text-white text-xs font-semibold flex items-center justify-center">
@@ -1720,9 +1721,10 @@ export default function MessagesPage() {
                           <div key={msg.id}>
                             <div className="flex justify-center my-4">
                               <div className="max-w-[80%] rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                                <div className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words">
-                                  {msg.content || msg.text}
-                                </div>
+                                <SystemMessage
+                                  message={msg.content || msg.text}
+                                  className="text-sm text-amber-900 text-center whitespace-pre-wrap break-words"
+                                />
                                 <div className="text-xs text-amber-700 text-center mt-2">
                                   {formatTime(msg.created_at)}
                                 </div>

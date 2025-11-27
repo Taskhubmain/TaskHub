@@ -1,5 +1,6 @@
 // System message templates for chat notifications
 // Dynamic parts (names, titles) are passed as parameters and NOT translated
+// Use [[...]] markers for content that should not be translated by Weglot
 
 type MessageTemplate = {
   en: string;
@@ -9,8 +10,8 @@ type MessageTemplate = {
 const templates: Record<string, MessageTemplate> = {
   // Deal accepted message
   dealAccepted: {
-    ru: '{itemType} "{title}" был принят {date} за {price} {currency}, заказчик - {clientName}, исполнитель - {freelancerName}.\nУдачной сделки!',
-    en: '{itemType} "{title}" was accepted on {date} for {price} {currency}, client - {clientName}, freelancer - {freelancerName}.\nGood luck with the deal!'
+    ru: '{itemType} [["{title}"]] был принят {date} за {price} {currency}, заказчик - [[{clientName}]], исполнитель - [[{freelancerName}]].\nУдачной сделки!',
+    en: '{itemType} [["{title}"]] was accepted on {date} for {price} {currency}, client - [[{clientName}]], freelancer - [[{freelancerName}]].\nGood luck with the deal!'
   },
 
   // Progress update messages
@@ -26,13 +27,13 @@ const templates: Record<string, MessageTemplate> = {
 
   // Task completion messages
   taskCompleted: {
-    ru: '✓ {taskName} - выполнено (прогресс: {progress}%)',
-    en: '✓ {taskName} - completed (progress: {progress}%)'
+    ru: '✓ [[{taskName}]] - выполнено (прогресс: {progress}%)',
+    en: '✓ [[{taskName}]] - completed (progress: {progress}%)'
   },
 
   taskUncompleted: {
-    ru: '✗ {taskName} - снята отметка (прогресс: {progress}%)',
-    en: '✗ {taskName} - unchecked (progress: {progress}%)'
+    ru: '✗ [[{taskName}]] - снята отметка (прогресс: {progress}%)',
+    en: '✗ [[{taskName}]] - unchecked (progress: {progress}%)'
   },
 
   // Work submission
@@ -80,6 +81,7 @@ interface SystemMessageParams {
  * @param templateKey - Key of the message template
  * @param params - Dynamic values to insert (NOT translated)
  * @param language - Language code ('en' or 'ru')
+ * @returns Message string with [[...]] markers for no-translate sections
  */
 export function getSystemMessage(
   templateKey: keyof typeof templates,
@@ -96,10 +98,52 @@ export function getSystemMessage(
 
   // Replace all placeholders with actual values
   Object.entries(params).forEach(([key, value]) => {
+    const placeholder = `{${key}}`;
     message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
   });
 
   return message;
+}
+
+/**
+ * Parse system message and extract parts that should not be translated
+ * Returns array of segments: { text: string, noTranslate: boolean }
+ */
+export function parseSystemMessage(message: string): Array<{ text: string; noTranslate: boolean }> {
+  const segments: Array<{ text: string; noTranslate: boolean }> = [];
+  let currentIndex = 0;
+
+  // Find all [[...]] markers
+  const regex = /\[\[(.*?)\]\]/g;
+  let match;
+
+  while ((match = regex.exec(message)) !== null) {
+    // Add text before the marker (translatable)
+    if (match.index > currentIndex) {
+      segments.push({
+        text: message.substring(currentIndex, match.index),
+        noTranslate: false
+      });
+    }
+
+    // Add the content inside the marker (non-translatable)
+    segments.push({
+      text: match[1],
+      noTranslate: true
+    });
+
+    currentIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text (translatable)
+  if (currentIndex < message.length) {
+    segments.push({
+      text: message.substring(currentIndex),
+      noTranslate: false
+    });
+  }
+
+  return segments.length > 0 ? segments : [{ text: message, noTranslate: false }];
 }
 
 /**
