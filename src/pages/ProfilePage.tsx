@@ -709,7 +709,7 @@ export default function ProfilePage() {
       return;
     }
 
-    let uploadedAvatarUrl = String(fd.get('avatar') || '');
+    let uploadedAvatarUrl = profile.avatar; // Сохраняем текущий URL, если не загружается новый
 
     if (avatarFile && user) {
       try {
@@ -762,7 +762,9 @@ export default function ProfilePage() {
       location: String(fd.get('location') || ''),
       contactEmail: String(fd.get('contactEmail') || ''),
       contactTelegram: String(fd.get('contactTelegram') || ''),
-      avatar: uploadedAvatarUrl
+      avatar: uploadedAvatarUrl,
+      age: fd.get('age') ? Number(fd.get('age')) : null,
+      experienceYears: fd.get('experienceYears') ? Number(fd.get('experienceYears')) : 0
     };
 
     try {
@@ -780,6 +782,8 @@ export default function ProfilePage() {
           contact_gmail: next.contactEmail,
           contact_telegram: next.contactTelegram,
           avatar_url: next.avatar,
+          age: next.age,
+          experience_years: next.experienceYears,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -1795,6 +1799,16 @@ export default function ProfilePage() {
                             <option>RUB</option>
                             <option>PLN</option>
                           </select>
+                        </label>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <label className="grid gap-1">
+                          <span className="text-sm font-medium">Возраст</span>
+                          <Input type="number" name="age" defaultValue={profile.age || ''} className="h-11" min="16" max="100" placeholder="Не указано" />
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-sm font-medium">Опыт работы (лет)</span>
+                          <Input type="number" name="experienceYears" defaultValue={profile.experienceYears || ''} className="h-11" min="0" max="50" placeholder="Не указано" />
                         </label>
                       </div>
                       <div className="grid sm:grid-cols-2 gap-4">
