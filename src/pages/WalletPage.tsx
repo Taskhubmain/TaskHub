@@ -769,7 +769,7 @@ export default function WalletPage() {
                         onClick={handleConnectStripe}
                         variant="default"
                         size="sm"
-                        className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E] w-full sm:w-auto"
+                        className="bg-[#6FE7C8] hover:bg-[#5DD6B7] text-[#3F7F6E] w-full sm:w-auto sm:px-8"
                       >
                         Продолжить настройку Stripe
                       </Button>

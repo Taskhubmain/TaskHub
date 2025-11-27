@@ -233,6 +233,32 @@ Deno.serve(async (req: Request) => {
         console.log("Profile updated successfully");
       }
 
+      // Add entry to wallet_ledger for accurate total_deposited tracking
+      const amountMinor = Math.round(amount * 100);
+      const { error: ledgerError } = await supabase
+        .from("wallet_ledger")
+        .insert({
+          user_id: user_id,
+          kind: "deposit",
+          status: "completed",
+          amount_minor: amountMinor,
+          currency: (transaction.currency || "USD").toUpperCase(),
+          stripe_pi_id: session.payment_intent as string || null,
+          metadata: {
+            transaction_id: transaction_id,
+            session_id: session.id,
+            completed_at: new Date().toISOString()
+          }
+        });
+
+      if (ledgerError) {
+        console.error("Failed to create wallet_ledger entry:", ledgerError.message);
+        // Don't throw - transaction and balance are already updated
+        // This is just for tracking total_deposited
+      } else {
+        console.log("Wallet ledger entry created successfully");
+      }
+
       console.log("Successfully processed deposit for user", user_id, "amount:", amount);
     } else if (event.type === "checkout.session.expired") {
       console.log("Processing checkout.session.expired event");
