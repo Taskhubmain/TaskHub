@@ -8,7 +8,7 @@ interface SystemMessageProps {
 
 /**
  * Component for rendering system messages with proper no-translate markers
- * Parses [[...]] markers and wraps content in data-wg-notranslate spans
+ * Parses [[...]] markers and wraps content in wg-notranslate spans
  */
 export function SystemMessage({ message, className = '' }: SystemMessageProps) {
   const segments = parseSystemMessage(message);
@@ -18,7 +18,7 @@ export function SystemMessage({ message, className = '' }: SystemMessageProps) {
       {segments.map((segment, index) => {
         if (segment.noTranslate) {
           return (
-            <span key={index} data-wg-notranslate>
+            <span key={index} className="wg-notranslate" data-wg-notranslate data-no-translate>
               {segment.text}
             </span>
           );
