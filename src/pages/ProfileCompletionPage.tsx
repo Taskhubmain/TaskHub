@@ -203,10 +203,10 @@ export default function ProfileCompletionPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Завершите настройку профиля
+              {t('profileCompletion.title')}
             </h1>
             <p className="text-gray-600">
-              Расскажите о себе, чтобы клиенты могли найти вас
+              {t('profileCompletion.subtitle')}
             </p>
           </div>
 
@@ -235,13 +235,13 @@ export default function ProfileCompletionPage() {
                   />
                 </label>
               </div>
-              <p className="mt-2 text-sm text-gray-500">Загрузите фото профиля</p>
+              <p className="mt-2 text-sm text-gray-500">{t('profileCompletion.uploadPhoto')}</p>
             </div>
 
             {/* Specialty */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Специальность *
+                {t('profileCompletion.specialty')} *
               </label>
               <input
                 type="text"
@@ -250,7 +250,7 @@ export default function ProfileCompletionPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, specialty: e.target.value })
                 }
-                placeholder="Например: Full-stack разработчик, UI/UX дизайнер"
+                placeholder={t('profileCompletion.specialtyPlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
               />
             </div>
@@ -259,7 +259,7 @@ export default function ProfileCompletionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Опыт работы (лет) *
+                  {t('profileCompletion.experience')} *
                 </label>
                 <input
                   type="number"
@@ -271,7 +271,7 @@ export default function ProfileCompletionPage() {
                     const value = e.target.value;
                     setFormData({ ...formData, experience_years: value });
                     if (parseInt(value) > 40) {
-                      setExperienceError('Установите корректный опыт работы');
+                      setExperienceError(t('profileCompletion.experienceError'));
                     } else {
                       setExperienceError('');
                     }
@@ -284,12 +284,12 @@ export default function ProfileCompletionPage() {
                 {experienceError ? (
                   <p className="mt-1 text-xs text-red-600">{experienceError}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-gray-500">Максимум 40 лет</p>
+                  <p className="mt-1 text-xs text-gray-500">{t('profileCompletion.experienceMax')}</p>
                 )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Возраст
+                  {t('profileCompletion.age')}
                 </label>
                 <input
                   type="number"
@@ -300,7 +300,7 @@ export default function ProfileCompletionPage() {
                     const value = e.target.value;
                     setFormData({ ...formData, age: value });
                     if (parseInt(value) > 80) {
-                      setAgeError('Установите корректный возраст');
+                      setAgeError(t('profileCompletion.ageError'));
                     } else {
                       setAgeError('');
                     }
@@ -317,7 +317,7 @@ export default function ProfileCompletionPage() {
             {/* Rates */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Стоимость работ *
+                {t('profileCompletion.rates')} *
               </label>
               <div className="grid grid-cols-3 gap-4">
                 <input
@@ -329,7 +329,7 @@ export default function ProfileCompletionPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, rate_min: e.target.value })
                   }
-                  placeholder="Мин."
+                  placeholder={t('profileCompletion.min')}
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                 />
                 <input
@@ -341,7 +341,7 @@ export default function ProfileCompletionPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, rate_max: e.target.value })
                   }
-                  placeholder="Макс."
+                  placeholder={t('profileCompletion.max')}
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                 />
                 <select
@@ -362,7 +362,7 @@ export default function ProfileCompletionPage() {
             {/* Skills */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Навыки и технологии *
+                {t('profileCompletion.skills')} *
               </label>
               <div className="flex gap-2 mb-3">
                 <input
@@ -370,7 +370,7 @@ export default function ProfileCompletionPage() {
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                  placeholder="Добавьте навык"
+                  placeholder={t('profileCompletion.addSkill')}
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                 />
                 <button
@@ -379,7 +379,7 @@ export default function ProfileCompletionPage() {
                   disabled={formData.skills.length >= 10}
                   className="px-6 py-3 bg-[#3F7F6E] text-white rounded-lg hover:bg-[#2F6F5E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="hidden sm:inline">Добавить</span>
+                  <span className="hidden sm:inline">{t('profileCompletion.addButton')}</span>
                   <span className="sm:hidden">+</span>
                 </button>
               </div>
@@ -402,12 +402,12 @@ export default function ProfileCompletionPage() {
               </div>
               {formData.skills.length === 0 && (
                 <p className="text-sm text-gray-500 mt-2">
-                  Добавьте хотя бы один навык
+                  {t('profileCompletion.addSkillHint')}
                 </p>
               )}
               {formData.skills.length > 0 && (
                 <p className="text-sm text-gray-500 mt-2">
-                  {formData.skills.length} / 10 навыков
+                  {formData.skills.length} / 10 {t('profileCompletion.skillsCount')}
                 </p>
               )}
             </div>
@@ -415,7 +415,7 @@ export default function ProfileCompletionPage() {
             {/* About Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                О себе (до 700 символов)
+                {t('profileCompletion.about')}
               </label>
               <textarea
                 value={formData.bio}
@@ -424,7 +424,7 @@ export default function ProfileCompletionPage() {
                 }
                 rows={6}
                 maxLength={700}
-                placeholder="Расскажите о своём опыте, навыках и интересах..."
+                placeholder={t('profileCompletion.aboutPlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent resize-none"
               />
               <div className="text-xs text-gray-500 text-right mt-1">
@@ -435,13 +435,13 @@ export default function ProfileCompletionPage() {
             {/* Contact Information */}
             <div className="border-t pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Контактная информация
+                {t('profileCompletion.contactInfo')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Локация
+                    {t('profileCompletion.location')}
                   </label>
                   <input
                     type="text"
@@ -449,14 +449,14 @@ export default function ProfileCompletionPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, location: e.target.value })
                     }
-                    placeholder="Город, страна"
+                    placeholder={t('profileCompletion.locationPlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Telegram
+                    {t('profileCompletion.telegram')}
                   </label>
                   <input
                     type="text"
@@ -464,14 +464,14 @@ export default function ProfileCompletionPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, contact_telegram: e.target.value })
                     }
-                    placeholder="@username"
+                    placeholder={t('profileCompletion.telegramPlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gmail
+                    {t('profileCompletion.gmail')}
                   </label>
                   <input
                     type="email"
@@ -479,7 +479,7 @@ export default function ProfileCompletionPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, contact_gmail: e.target.value })
                     }
-                    placeholder="example@gmail.com"
+                    placeholder={t('profileCompletion.gmailPlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3F7F6E] focus:border-transparent"
                   />
                 </div>
@@ -493,7 +493,7 @@ export default function ProfileCompletionPage() {
                 disabled={loading || formData.skills.length === 0 || !!ageError || !!experienceError}
                 className="w-full py-4 bg-[#3F7F6E] text-white rounded-lg font-semibold hover:bg-[#2F6F5E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Сохранение...' : 'Завершить настройку профиля'}
+                {loading ? t('profileCompletion.saving') : t('profileCompletion.submit')}
               </button>
             </div>
           </form>
