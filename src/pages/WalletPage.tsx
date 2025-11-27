@@ -38,6 +38,7 @@ interface WalletData {
   balance: number;
   pending_balance: number;
   total_earned: number;
+  total_deposited: number;
   total_withdrawn: number;
   currency: string;
 }
@@ -247,6 +248,7 @@ export default function WalletPage() {
         setWallet({
           ...walletData,
           total_earned: statsData?.total_earned || 0,
+          total_deposited: statsData?.total_deposited || 0,
           total_withdrawn: statsData?.total_withdrawn || walletData.total_withdrawn
         });
       }
@@ -705,9 +707,9 @@ export default function WalletPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-[#3F7F6E] mb-1">Всего заработано</div>
+                    <div className="text-sm text-[#3F7F6E] mb-1">Всего введено</div>
                     <div className="text-2xl font-bold text-green-600">
-                      ${wallet.total_earned.toFixed(2)}
+                      ${wallet.total_deposited.toFixed(2)}
                     </div>
                   </div>
                   <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
