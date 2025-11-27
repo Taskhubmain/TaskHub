@@ -12,15 +12,15 @@ export function BoostBadge({ isBoosted, showDiscount = true, showNewbie = true, 
   if (!isBoosted) return null;
 
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex flex-col gap-1.5 ${className}`}>
       {showDiscount && (
-        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 flex items-center gap-1">
+        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 flex items-center gap-1 shadow-md">
           <Zap className="h-3 w-3" />
-          20% скидка!
+          Топовое объявление!
         </Badge>
       )}
       {showNewbie && (
-        <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 flex items-center gap-1">
+        <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 flex items-center gap-1 shadow-md">
           <TrendingUp className="h-3 w-3" />
           Исполнитель недавно
         </Badge>
