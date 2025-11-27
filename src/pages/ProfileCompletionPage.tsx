@@ -55,18 +55,30 @@ export default function ProfileCompletionPage() {
           setAvatarPreview(profile.avatar_url);
         }
 
+        // Helper function to filter out placeholder values
+        const cleanValue = (value: string | null | undefined) => {
+          if (!value) return '';
+          // Remove common placeholder values in different languages
+          const placeholders = [
+            'не указано', 'не указана', 'не указан', 'не указаны',
+            'not specified', 'n/a', 'N/A'
+          ];
+          const normalized = value.trim().toLowerCase();
+          return placeholders.some(p => normalized === p.toLowerCase()) ? '' : value;
+        };
+
         setFormData({
-          specialty: profile.specialty || '',
+          specialty: cleanValue(profile.specialty),
           experience_years: profile.experience_years?.toString() || '',
           age: profile.age?.toString() || '',
           rate_min: profile.rate_min?.toString() || '',
           rate_max: profile.rate_max?.toString() || '',
           currency: profile.currency || 'USD',
           skills: profile.skills || [],
-          location: profile.location || '',
-          contact_telegram: profile.contact_telegram || '',
-          contact_gmail: profile.contact_gmail || '',
-          bio: profile.bio || '',
+          location: cleanValue(profile.location),
+          contact_telegram: cleanValue(profile.contact_telegram),
+          contact_gmail: cleanValue(profile.contact_gmail),
+          bio: cleanValue(profile.bio),
         });
       }
     };
