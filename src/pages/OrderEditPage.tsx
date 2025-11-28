@@ -49,6 +49,11 @@ export default function OrderEditPage() {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [priceError, setPriceError] = useState('');
 
   useEffect(() => {
     loadOrder();
@@ -83,12 +88,34 @@ export default function OrderEditPage() {
       }
 
       setOrder(orderData);
+      setTitle(orderData.title);
+      setDescription(orderData.description);
+      setMinPrice(String(orderData.price_min));
+      setMaxPrice(String(orderData.price_max));
     } catch (error) {
       console.error('Error loading order:', error);
       alert('Ошибка при загрузке заказа');
     } finally {
       setFetching(false);
     }
+  };
+
+  const validatePrices = () => {
+    const min = Number(minPrice);
+    const max = Number(maxPrice);
+
+    if (min <= 0 || max <= 0) {
+      setPriceError('Цены должны быть больше нуля');
+      return false;
+    }
+
+    if (max <= min) {
+      setPriceError('Максимальная цена должна быть строго выше минимальной');
+      return false;
+    }
+
+    setPriceError('');
+    return true;
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -99,19 +126,23 @@ export default function OrderEditPage() {
       return;
     }
 
+    if (!validatePrices()) {
+      return;
+    }
+
     setLoading(true);
     const fd = new FormData(e.currentTarget);
 
     const tags = String(fd.get('tags') || '').split(',').map(t => t.trim()).filter(Boolean);
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('orders')
       .update({
-        title: String(fd.get('title')),
-        description: String(fd.get('description') || ''),
+        title,
+        description,
         category: String(fd.get('category')),
-        price_min: Number(fd.get('budget_min')),
-        price_max: Number(fd.get('budget_max')),
+        price_min: Number(minPrice),
+        price_max: Number(maxPrice),
         currency: String(fd.get('currency')),
         engagement: String(fd.get('engagement')),
         deadline: fd.get('deadline') ? String(fd.get('deadline')) : null,
@@ -153,7 +184,19 @@ export default function OrderEditPage() {
             <Card>
               <CardContent className="p-6 grid gap-4">
                 <Field label="Заголовок">
-                  <Input name="title" defaultValue={order.title} placeholder="Напр.: Нужен сайт‑лендинг на React" required className="h-11" />
+                  <Input
+                    name="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Напр.: Нужен сайт‑лендинг на React"
+                    required
+                    minLength={30}
+                    maxLength={70}
+                    className="h-11"
+                  />
+                  <span className={`text-xs mt-1 ${title.length < 30 ? 'text-red-500' : title.length > 70 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 30 до 70 символов ({title.length}/70)
+                  </span>
                 </Field>
                 <TwoCol
                   left={
@@ -182,7 +225,16 @@ export default function OrderEditPage() {
                     <Field label="Бюджет (мин)">
                       <div className="flex gap-2">
                         <span className="inline-flex items-center px-2 border rounded-md"><DollarSign className="h-4 w-4" /></span>
-                        <Input name="budget_min" type="number" defaultValue={order.price_min} placeholder="300" className="h-11" />
+                        <Input
+                          name="budget_min"
+                          type="number"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                          placeholder="300"
+                          min="1"
+                          required
+                          className="h-11"
+                        />
                       </div>
                     </Field>
                   }
@@ -190,11 +242,24 @@ export default function OrderEditPage() {
                     <Field label="Бюджет (макс)">
                       <div className="flex gap-2">
                         <span className="inline-flex items-center px-2 border rounded-md"><DollarSign className="h-4 w-4" /></span>
-                        <Input name="budget_max" type="number" defaultValue={order.price_max} placeholder="600" className="h-11" />
+                        <Input
+                          name="budget_max"
+                          type="number"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          placeholder="600"
+                          min="1"
+                          required
+                          className="h-11"
+                        />
                       </div>
                     </Field>
                   }
                 />
+                <p className="text-xs text-gray-500 -mt-2">Максимальная цена должна быть выше минимальной</p>
+                {priceError && (
+                  <p className="text-sm text-red-500">{priceError}</p>
+                )}
                 <TwoCol
                   left={
                     <Field label="Валюта">
@@ -217,7 +282,20 @@ export default function OrderEditPage() {
                   }
                 />
                 <Field label="Описание">
-                  <textarea name="description" rows={6} defaultValue={order.description} placeholder="Опишите задачи, критерии приёмки, ссылки на референсы" className="rounded-md border px-3 py-2 bg-background" />
+                  <textarea
+                    name="description"
+                    rows={6}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Опишите задачи, критерии приёмки, ссылки на референсы"
+                    className="rounded-md border px-3 py-2 bg-background"
+                    minLength={200}
+                    maxLength={700}
+                    required
+                  />
+                  <span className={`text-xs mt-1 ${description.length < 200 ? 'text-red-500' : description.length > 700 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 200 до 700 символов ({description.length}/700)
+                  </span>
                 </Field>
                 <Field label="Теги (через запятую)">
                   <Input name="tags" defaultValue={order.tags.join(', ')} placeholder="React, Tailwind, API" className="h-11" />

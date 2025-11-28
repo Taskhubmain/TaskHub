@@ -314,12 +314,16 @@ export default function TaskCreatePage() {
                     required
                     className="h-11"
                     value={title}
-                    maxLength={50}
+                    minLength={30}
+                    maxLength={70}
                     onChange={(e) => {
                       setTitle(e.target.value);
                       checkContent(`${e.target.value} ${description}`);
                     }}
                   />
+                  <span className={`text-xs mt-1 ${title.length < 30 ? 'text-red-500' : title.length > 70 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 30 до 70 символов ({title.length}/70)
+                  </span>
                 </Field>
                 <ModerationAlert message={blockMessage} isVisible={isBlocked} />
                 <TwoCol
@@ -422,12 +426,17 @@ export default function TaskCreatePage() {
                     placeholder="Опишите опыт, стек, процесс и критерии качества"
                     className="rounded-md border px-3 py-2 bg-background"
                     value={description}
+                    minLength={200}
                     maxLength={700}
+                    required
                     onChange={(e) => {
                       setDescription(e.target.value);
                       checkContent(`${title} ${e.target.value}`);
                     }}
                   />
+                  <span className={`text-xs mt-1 ${description.length < 200 ? 'text-red-500' : description.length > 700 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 200 до 700 символов ({description.length}/700)
+                  </span>
                 </Field>
                 <Field label={`Теги (через запятую, макс. 10)`}>
                   <Input
@@ -444,6 +453,7 @@ export default function TaskCreatePage() {
                 {priceError && (
                   <p className="text-sm text-red-500 -mt-2">{priceError}</p>
                 )}
+                <p className="text-xs text-gray-500 -mt-2">Укажите вашу цену за выполнение работы</p>
 
                 <div className={`relative p-4 rounded-lg border-2 transition ${
                   boostedTasksCount >= 3 ? 'bg-gray-100 border-gray-300 opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-[#6FE7C8]/10 to-[#3F7F6E]/10 border-[#6FE7C8]'

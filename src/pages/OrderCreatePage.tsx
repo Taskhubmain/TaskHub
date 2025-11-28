@@ -267,12 +267,16 @@ export default function OrderCreatePage() {
                     required
                     className="h-11"
                     value={title}
-                    maxLength={50}
+                    minLength={30}
+                    maxLength={70}
                     onChange={(e) => {
                       setTitle(e.target.value);
                       checkContent(`${e.target.value} ${description}`);
                     }}
                   />
+                  <span className={`text-xs mt-1 ${title.length < 30 ? 'text-red-500' : title.length > 70 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 30 до 70 символов ({title.length}/70)
+                  </span>
                 </Field>
                 <ModerationAlert message={blockMessage} isVisible={isBlocked} />
                 <TwoCol
@@ -348,8 +352,9 @@ export default function OrderCreatePage() {
                     </Field>
                   }
                 />
+                <p className="text-xs text-gray-500 -mt-2">Максимальная цена должна быть выше минимальной</p>
                 {priceError && (
-                  <p className="text-sm text-red-500 -mt-2">{priceError}</p>
+                  <p className="text-sm text-red-500">{priceError}</p>
                 )}
                 <TwoCol
                   left={
@@ -379,12 +384,17 @@ export default function OrderCreatePage() {
                     placeholder="Опишите задачи, критерии приёмки, ссылки на референсы"
                     className="rounded-md border px-3 py-2 bg-background"
                     value={description}
+                    minLength={200}
                     maxLength={700}
+                    required
                     onChange={(e) => {
                       setDescription(e.target.value);
                       checkContent(`${title} ${e.target.value}`);
                     }}
                   />
+                  <span className={`text-xs mt-1 ${description.length < 200 ? 'text-red-500' : description.length > 700 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 200 до 700 символов ({description.length}/700)
+                  </span>
                 </Field>
                 <Field label={`Теги (через запятую, макс. 10)`}>
                   <Input

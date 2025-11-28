@@ -47,6 +47,8 @@ export default function TaskEditPage() {
   const [loading, setLoading] = useState(false);
   const [task, setTask] = useState<TaskData | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
   const featureNames = [
     'Дизайн по референсам',
@@ -90,6 +92,8 @@ export default function TaskEditPage() {
       }
 
       setTask(taskData);
+      setTitle(taskData.title);
+      setDescription(taskData.description);
     } catch (error) {
       console.error('Error loading task:', error);
       alert('Ошибка при загрузке объявления');
@@ -117,11 +121,11 @@ export default function TaskEditPage() {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('tasks')
       .update({
-        title: String(fd.get('title')),
-        description: String(fd.get('description') || ''),
+        title,
+        description,
         category: String(fd.get('category')),
         price: Number(fd.get('price')),
         currency: String(fd.get('currency')),
@@ -164,7 +168,19 @@ export default function TaskEditPage() {
             <Card>
               <CardContent className="p-6 grid gap-4">
                 <Field label="Название">
-                  <Input name="title" defaultValue={task.title} placeholder="Сделаю адаптивный лендинг на React / Next" required className="h-11" />
+                  <Input
+                    name="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Сделаю адаптивный лендинг на React / Next"
+                    required
+                    minLength={30}
+                    maxLength={70}
+                    className="h-11"
+                  />
+                  <span className={`text-xs mt-1 ${title.length < 30 ? 'text-red-500' : title.length > 70 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 30 до 70 символов ({title.length}/70)
+                  </span>
                 </Field>
                 <TwoCol
                   left={
@@ -225,7 +241,20 @@ export default function TaskEditPage() {
                   </div>
                 </Field>
                 <Field label="Описание">
-                  <textarea name="description" rows={6} defaultValue={task.description} placeholder="Опишите опыт, стек, процесс и критерии качества" className="rounded-md border px-3 py-2 bg-background" />
+                  <textarea
+                    name="description"
+                    rows={6}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Опишите опыт, стек, процесс и критерии качества"
+                    className="rounded-md border px-3 py-2 bg-background"
+                    minLength={200}
+                    maxLength={700}
+                    required
+                  />
+                  <span className={`text-xs mt-1 ${description.length < 200 ? 'text-red-500' : description.length > 700 ? 'text-red-500' : 'text-gray-500'}`}>
+                    От 200 до 700 символов ({description.length}/700)
+                  </span>
                 </Field>
                 <Field label="Теги (через запятую)">
                   <Input name="tags" defaultValue={task.tags.join(', ')} placeholder="React, Tailwind, SSR" className="h-11" />
