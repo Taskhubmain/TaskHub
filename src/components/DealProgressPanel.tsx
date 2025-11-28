@@ -42,6 +42,7 @@ interface Deal {
   status: string;
   submitted_at: string | null;
   chat_id: string | null;
+  order_id: string | null;
 }
 
 export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId, freelancerId }: DealProgressPanelProps) {
@@ -59,6 +60,7 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
   const [loading, setLoading] = useState(false);
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [hasReview, setHasReview] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -113,7 +115,7 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
 
     const { data: dealData } = await supabase
       .from('deals')
-      .select('current_progress, last_progress_update, status, submitted_at, chat_id')
+      .select('current_progress, last_progress_update, status, submitted_at, chat_id, order_id')
       .eq('id', dealId)
       .maybeSingle();
 
@@ -121,6 +123,16 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
       setDeal(dealData);
       setNewProgress(dealData.current_progress || 0);
     }
+
+    // Check if review already exists for this deal
+    const { data: existingReview } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('deal_id', dealId)
+      .eq('reviewer_id', userId)
+      .maybeSingle();
+
+    setHasReview(!!existingReview);
 
     const { data: reports } = await supabase
       .from('deal_progress_reports')
@@ -872,21 +884,23 @@ export default function DealProgressPanel({ dealId, userId, isFreelancer, chatId
             </div>
           )}
 
-          {/* Review Form after accepting work */}
-          {showReviewForm && freelancerId && (
-            <div className="p-4">
-              <ReviewInChat
-                dealId={dealId}
-                revieweeId={freelancerId}
-                reviewerId={userId}
-                onSubmitted={() => {
-                  setShowReviewForm(false);
-                  alert('Спасибо за отзыв!');
-                  loadData();
-                }}
-              />
-            </div>
-          )}
+        </div>
+      )}
+
+      {/* Review Form after accepting work - ONLY FOR CLIENT and if review doesn't exist yet */}
+      {!isFreelancer && showReviewForm && freelancerId && !hasReview && (
+        <div className="p-4 border-t border-gray-200 bg-white">
+          <ReviewInChat
+            dealId={dealId}
+            revieweeId={freelancerId}
+            reviewerId={userId}
+            onSubmitted={() => {
+              setShowReviewForm(false);
+              setHasReview(true);
+              alert('Спасибо за отзыв!');
+              loadData();
+            }}
+          />
         </div>
       )}
 
