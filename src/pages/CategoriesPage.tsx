@@ -87,7 +87,7 @@ const categories: Category[] = [
       { name: 'Копирайт', slug: 'copywriting', image: 'https://images.pexels.com/photos/261763/pexels-photo-261763.jpeg' },
       { name: 'Рерайт', slug: 'rewriting', image: 'https://images.pexels.com/photos/301703/pexels-photo-301703.jpeg' },
       { name: 'Переводы', slug: 'translation', image: 'https://images.pexels.com/photos/256417/pexels-photo-256417.jpeg' },
-      { name: 'Редактура', slug: 'editing', image: 'https://images.pexels.com/photos/159510/pen-writing-notes-studying-159510.jpeg' },
+      { name: 'Редактура', slug: 'editing', image: 'https://radika1.link/2025/12/01/molodoi-pisatel-delaet-zametkia364d5c1dc1d9a35.jpg' },
       { name: 'Технические тексты', slug: 'technical-writing', image: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg' },
       { name: 'Сценарии', slug: 'scripts', image: 'https://images.pexels.com/photos/7235865/pexels-photo-7235865.jpeg' },
       { name: 'Описания товаров', slug: 'product-descriptions', image: 'https://images.pexels.com/photos/4067755/pexels-photo-4067755.jpeg' }
