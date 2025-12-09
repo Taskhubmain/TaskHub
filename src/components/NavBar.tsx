@@ -9,10 +9,24 @@ import { queryWithRetry, subscribeWithMonitoring } from '@/lib/supabase-utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import RegionSelector from './RegionSelector';
 
-export default function NavBar() {
-  const { t, language } = useTranslation();
+declare global {
+  interface Window {
+    Weglot?: any;
+  }
+}
 
-  // Links are recreated on every render when language changes
+export default function NavBar() {
+  const { t } = useTranslation();
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [hasNewDeals, setHasNewDeals] = useState(false);
+  const [hasNewProposals, setHasNewProposals] = useState(false);
+  const [hasWalletUpdate, setHasWalletUpdate] = useState(false);
+  const [learningCompleted, setLearningCompleted] = useState(false);
+
   const PUBLIC_LINKS = [
     { href: '#/market', label: t('nav.market') },
     { href: '#/learning', label: t('nav.learning') },
@@ -30,45 +44,24 @@ export default function NavBar() {
     { href: '#/me', label: t('nav.profile') }
   ];
 
-  const [currentHash, setCurrentHash] = useState(window.location.hash);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
-  const [hasNewDeals, setHasNewDeals] = useState(false);
-  const [hasNewProposals, setHasNewProposals] = useState(false);
-  const [hasWalletUpdate, setHasWalletUpdate] = useState(false);
-  const [learningCompleted, setLearningCompleted] = useState(false);
-  const { isAuthenticated, user, logout } = useAuth();
-
+  // --- Проверка обучения ---
   const checkLearningStatus = async () => {
-    if (!user) {
-      setLearningCompleted(false);
-      return;
-    }
+    if (!user) return setLearningCompleted(false);
     const { data } = await queryWithRetry(() =>
-      getSupabase()
-        .from('profiles')
-        .select('learning_completed')
-        .eq('id', user.id)
-        .maybeSingle()
+      getSupabase().from('profiles').select('learning_completed').eq('id', user.id).maybeSingle()
     );
     setLearningCompleted(data?.learning_completed || false);
   };
 
+  // --- Подсчет уведомлений ---
   const computeHasUnread = async () => {
-    if (!user) {
-      setHasUnread(false);
-      return;
-    }
-    const { data, error } = await queryWithRetry(() =>
+    if (!user) return setHasUnread(false);
+    const { data } = await queryWithRetry(() =>
       getSupabase()
         .from('chats')
         .select('id, participant1_id, participant2_id, unread_count_p1, unread_count_p2')
         .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
     );
-    if (error) {
-      setHasUnread(false);
-      return;
-    }
     const anyUnread = (data || []).some((c: any) =>
       c.participant1_id === user.id ? (c.unread_count_p1 || 0) > 0 : (c.unread_count_p2 || 0) > 0
     );
@@ -83,95 +76,58 @@ export default function NavBar() {
       return;
     }
 
+    // --- Новые сделки ---
     const viewedDealsStr = localStorage.getItem(`viewed_deals_${user.id}`);
-    let viewedDeals = viewedDealsStr ? JSON.parse(viewedDealsStr) : null;
+    let viewedDeals = viewedDealsStr ? JSON.parse(viewedDealsStr) : { timestamp: Date.now() };
+    if (!viewedDealsStr) localStorage.setItem(`viewed_deals_${user.id}`, JSON.stringify(viewedDeals));
 
-    if (!viewedDeals) {
-      viewedDeals = { timestamp: Date.now() };
-      localStorage.setItem(`viewed_deals_${user.id}`, JSON.stringify(viewedDeals));
-      setHasNewDeals(false);
-    } else {
-      const { data: dealsData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('deals')
-          .select('id, created_at')
-          .or(`client_id.eq.${user.id},freelancer_id.eq.${user.id}`)
-          .gte('created_at', new Date(viewedDeals.timestamp).toISOString())
-      );
+    const { data: dealsData } = await queryWithRetry(() =>
+      getSupabase()
+        .from('deals')
+        .select('id, created_at')
+        .or(`client_id.eq.${user.id},freelancer_id.eq.${user.id}`)
+        .gte('created_at', new Date(viewedDeals.timestamp).toISOString())
+    );
+    setHasNewDeals((dealsData?.length || 0) > 0);
 
-      setHasNewDeals((dealsData?.length || 0) > 0);
-    }
-
+    // --- Новые предложения ---
     const viewedProposalsStr = localStorage.getItem(`viewed_proposals_${user.id}`);
-    let viewedProposals = viewedProposalsStr ? JSON.parse(viewedProposalsStr) : null;
+    let viewedProposals = viewedProposalsStr ? JSON.parse(viewedProposalsStr) : { timestamp: Date.now() };
+    if (!viewedProposalsStr) localStorage.setItem(`viewed_proposals_${user.id}`, JSON.stringify(viewedProposals));
 
-    if (!viewedProposals) {
-      viewedProposals = { timestamp: Date.now() };
-      localStorage.setItem(`viewed_proposals_${user.id}`, JSON.stringify(viewedProposals));
-      setHasNewProposals(false);
+    const { data: ordersData } = await queryWithRetry(() =>
+      getSupabase().from('orders').select('id').eq('user_id', user.id)
+    );
+    const { data: tasksData } = await queryWithRetry(() =>
+      getSupabase().from('tasks').select('id').eq('user_id', user.id)
+    );
+    const orderIds = ordersData?.map(o => o.id) || [];
+    const taskIds = tasksData?.map(t => t.id) || [];
+    if (orderIds.length || taskIds.length) {
+      const { data: proposalsData } = await queryWithRetry(() =>
+        getSupabase()
+          .from('proposals')
+          .select('id, created_at')
+          .or(`order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`)
+          .gte('created_at', new Date(viewedProposals.timestamp).toISOString())
+      );
+      setHasNewProposals((proposalsData?.length || 0) > 0);
     } else {
-      const { data: ordersData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('orders')
-          .select('id')
-          .eq('user_id', user.id)
-      );
-
-      const { data: tasksData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('tasks')
-          .select('id')
-          .eq('user_id', user.id)
-      );
-
-      const orderIds = ordersData?.map(o => o.id) || [];
-      const taskIds = tasksData?.map(t => t.id) || [];
-
-      if (orderIds.length > 0 || taskIds.length > 0) {
-        const { data: proposalsData } = await queryWithRetry(() =>
-          getSupabase()
-            .from('proposals')
-            .select('id, created_at')
-            .or(`order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`)
-            .gte('created_at', new Date(viewedProposals.timestamp).toISOString())
-        );
-
-        setHasNewProposals((proposalsData?.length || 0) > 0);
-      } else {
-        setHasNewProposals(false);
-      }
+      setHasNewProposals(false);
     }
 
+    // --- Обновления кошелька ---
     const viewedWalletStr = localStorage.getItem(`viewed_wallet_${user.id}`);
     let viewedWallet = viewedWalletStr ? JSON.parse(viewedWalletStr) : null;
-
-    if (!viewedWallet) {
-      const { data: profileData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .maybeSingle()
-      );
-
-      const currentBalance = profileData?.balance || 0;
-      viewedWallet = { balance: currentBalance };
-      localStorage.setItem(`viewed_wallet_${user.id}`, JSON.stringify(viewedWallet));
-      setHasWalletUpdate(false);
-    } else {
-      const { data: profileData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .maybeSingle()
-      );
-
-      const currentBalance = profileData?.balance || 0;
-      setHasWalletUpdate(currentBalance !== viewedWallet.balance);
-    }
+    const { data: profileData } = await queryWithRetry(() =>
+      getSupabase().from('profiles').select('balance').eq('id', user.id).maybeSingle()
+    );
+    const currentBalance = profileData?.balance || 0;
+    if (!viewedWallet) localStorage.setItem(`viewed_wallet_${user.id}`, JSON.stringify({ balance: currentBalance }));
+    setHasWalletUpdate(!viewedWallet || viewedWallet.balance !== currentBalance);
   };
 
+  // --- Поддержка активности Supabase ---
   useSupabaseKeepAlive({
     onRecover: async () => {
       await resetSupabase();
@@ -181,6 +137,7 @@ export default function NavBar() {
     headTable: 'profiles'
   });
 
+  // --- Hash change ---
   useEffect(() => {
     const handleHashChange = () => {
       setCurrentHash(window.location.hash);
@@ -190,9 +147,9 @@ export default function NavBar() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // --- Инициализация данных ---
   useEffect(() => {
     if (!user) return;
-
     checkLearningStatus();
     computeHasUnread();
     computeNotifications();
@@ -209,6 +166,7 @@ export default function NavBar() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // --- Подписки Supabase ---
     let chatsSub: any = null;
     let dealsSub: any = null;
     let proposalsSub: any = null;
@@ -256,13 +214,24 @@ export default function NavBar() {
     };
   }, [user?.id]);
 
+  // --- Активная ссылка ---
   const isActiveLink = (href: string) => {
     const path = href.replace('#', '');
     const current = currentHash.replace('#', '') || '/';
-    if (path === '/' && current === '/') return true;
-    if (path !== '/' && current.startsWith(path)) return true;
-    return false;
+    return path === '/' ? current === '/' : current.startsWith(path);
   };
+
+  // --- Weglot Switcher ---
+  useEffect(() => {
+    if (!window.Weglot) return;
+    const container = document.getElementById('weglot_switcher');
+    if (container) {
+      container.innerHTML = '';
+      const switcher = document.createElement('div');
+      switcher.id = 'weglot_container';
+      container.appendChild(switcher);
+    }
+  }, [language]);
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-[#6FE7C8]/30 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/95">
@@ -318,6 +287,8 @@ export default function NavBar() {
 
         <div className="flex items-center gap-2">
           <RegionSelector />
+          <div id="weglot_switcher" className="hidden lg:block" />
+
           {isAuthenticated ? (
             <>
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -354,6 +325,7 @@ export default function NavBar() {
         </div>
       </div>
 
+      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
           <div className="px-4 py-3 space-y-1">
@@ -417,6 +389,7 @@ export default function NavBar() {
         </div>
       )}
 
+      {/* Learning reminder */}
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
