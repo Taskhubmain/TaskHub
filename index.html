@@ -1,20 +1,38 @@
-<!DOCTYPE html>
-<html lang="ru">
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/Favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>TaskHub - Freelance Platform</title>
 
-    <title>TaskHub</title>
-
-    <!-- Подключаем Weglot без инициализации (React сам всё сделает) -->
-    <script src="https://cdn.weglot.com/weglot.min.js" defer></script>
-
-    <!-- Подключение bundled JS -->
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- Weglot -->
+    <script src="https://cdn.weglot.com/weglot.min.js"></script>
+    <script>
+      Weglot.initialize({
+        api_key: 'wg_fef270cbd497e3fd12ff1dcb2ccf787c2',
+        default_language: 'ru',
+        excluded_blocks: [
+          '.wg-notranslate',
+          '[data-wg-notranslate]',
+          '[data-no-translate]',
+          '.chat-message',
+          '.order-title',
+          '.order-description',
+          '.task-title',
+          '.task-description',
+          '.proposal-content',
+          '.profile-bio',
+          '.review-text',
+          '.user-content',
+          '.ugc'
+        ]
+      });
+    </script>
+    <!-- /Weglot -->
   </head>
-
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
