@@ -364,9 +364,18 @@ export default function NavBar() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Мобильное меню */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
+=======
+      {/* Weglot-свитчер на мобилке */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
+          <div className="px-4 py-2">
+            <WeglotSwitcher />
+          </div>
+>>>>>>> parent of cd1ed9b (Update NavBar.tsx)
           <div className="px-4 py-3 space-y-1">
             {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
               const isMessages = link.href === '#/messages';
@@ -428,7 +437,10 @@ export default function NavBar() {
         </div>
       )}
 
+<<<<<<< HEAD
       {/* Блок обучения */}
+=======
+>>>>>>> parent of cd1ed9b (Update NavBar.tsx)
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
