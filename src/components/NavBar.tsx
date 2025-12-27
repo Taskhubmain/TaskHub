@@ -13,6 +13,7 @@ import WeglotSwitcher from './WeglotSwitcher';
 export default function NavBar() {
   const { t, language } = useTranslation();
 
+  // Links are recreated on every render when language changes
   const PUBLIC_LINKS = [
     { href: '#/market', label: t('nav.market') },
     { href: '#/learning', label: t('nav.learning') },
@@ -37,7 +38,6 @@ export default function NavBar() {
   const [hasNewProposals, setHasNewProposals] = useState(false);
   const [hasWalletUpdate, setHasWalletUpdate] = useState(false);
   const [learningCompleted, setLearningCompleted] = useState(false);
-
   const { isAuthenticated, user, logout } = useAuth();
 
   const checkLearningStatus = async () => {
@@ -84,9 +84,9 @@ export default function NavBar() {
       return;
     }
 
-    // Deals
     const viewedDealsStr = localStorage.getItem(`viewed_deals_${user.id}`);
     let viewedDeals = viewedDealsStr ? JSON.parse(viewedDealsStr) : null;
+
     if (!viewedDeals) {
       viewedDeals = { timestamp: Date.now() };
       localStorage.setItem(`viewed_deals_${user.id}`, JSON.stringify(viewedDeals));
@@ -99,25 +99,35 @@ export default function NavBar() {
           .or(`client_id.eq.${user.id},freelancer_id.eq.${user.id}`)
           .gte('created_at', new Date(viewedDeals.timestamp).toISOString())
       );
+
       setHasNewDeals((dealsData?.length || 0) > 0);
     }
 
-    // Proposals
     const viewedProposalsStr = localStorage.getItem(`viewed_proposals_${user.id}`);
     let viewedProposals = viewedProposalsStr ? JSON.parse(viewedProposalsStr) : null;
+
     if (!viewedProposals) {
       viewedProposals = { timestamp: Date.now() };
       localStorage.setItem(`viewed_proposals_${user.id}`, JSON.stringify(viewedProposals));
       setHasNewProposals(false);
     } else {
       const { data: ordersData } = await queryWithRetry(() =>
-        getSupabase().from('orders').select('id').eq('user_id', user.id)
+        getSupabase()
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
       );
+
       const { data: tasksData } = await queryWithRetry(() =>
-        getSupabase().from('tasks').select('id').eq('user_id', user.id)
+        getSupabase()
+          .from('tasks')
+          .select('id')
+          .eq('user_id', user.id)
       );
+
       const orderIds = ordersData?.map(o => o.id) || [];
       const taskIds = tasksData?.map(t => t.id) || [];
+
       if (orderIds.length > 0 || taskIds.length > 0) {
         const { data: proposalsData } = await queryWithRetry(() =>
           getSupabase()
@@ -126,27 +136,38 @@ export default function NavBar() {
             .or(`order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`)
             .gte('created_at', new Date(viewedProposals.timestamp).toISOString())
         );
+
         setHasNewProposals((proposalsData?.length || 0) > 0);
       } else {
         setHasNewProposals(false);
       }
     }
 
-    // Wallet
     const viewedWalletStr = localStorage.getItem(`viewed_wallet_${user.id}`);
     let viewedWallet = viewedWalletStr ? JSON.parse(viewedWalletStr) : null;
+
     if (!viewedWallet) {
       const { data: profileData } = await queryWithRetry(() =>
-        getSupabase().from('profiles').select('balance').eq('id', user.id).maybeSingle()
+        getSupabase()
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .maybeSingle()
       );
+
       const currentBalance = profileData?.balance || 0;
       viewedWallet = { balance: currentBalance };
       localStorage.setItem(`viewed_wallet_${user.id}`, JSON.stringify(viewedWallet));
       setHasWalletUpdate(false);
     } else {
       const { data: profileData } = await queryWithRetry(() =>
-        getSupabase().from('profiles').select('balance').eq('id', user.id).maybeSingle()
+        getSupabase()
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .maybeSingle()
       );
+
       const currentBalance = profileData?.balance || 0;
       setHasWalletUpdate(currentBalance !== viewedWallet.balance);
     }
@@ -172,10 +193,10 @@ export default function NavBar() {
 
   useEffect(() => {
     if (!user) return;
+
     checkLearningStatus();
     computeHasUnread();
     computeNotifications();
-
     const interval = setInterval(() => {
       computeHasUnread();
       computeNotifications();
@@ -252,54 +273,60 @@ export default function NavBar() {
           <a href="#/" className="font-bold text-sm xs-375:text-base tracking-tight hover:text-[#6FE7C8] transition">
             TaskHub
           </a>
-          <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">
-            beta
-          </Badge>
-
-          {/* Мобильный WeglotSwitcher после логотипа */}
-          <div className="lg:hidden ml-2">
+          <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">beta</Badge>
+          {/* Weglot mobile */}
+          <div id="weglot-switcher" className="lg:hidden ml-2">
             <WeglotSwitcher />
           </div>
         </div>
 
-        {/* Десктоп ссылки и WeglotSwitcher */}
         <div className="hidden lg:flex items-center gap-6 text-sm">
           {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
             const isMessages = link.href === '#/messages';
             const isDeals = link.href === '#/my-deals';
             const isProposals = link.href === '#/proposals';
             const isWallet = link.href === '#/wallet';
-            const showBadge = (isMessages && hasUnread) || (isDeals && hasNewDeals) || (isProposals && hasNewProposals) || (isWallet && hasWalletUpdate);
+            const showBadge =
+              (isMessages && hasUnread) ||
+              (isDeals && hasNewDeals) ||
+              (isProposals && hasNewProposals) ||
+              (isWallet && hasWalletUpdate);
             return (
               <a
                 key={link.href}
                 href={link.href}
-                className={`transition-colors font-medium relative ${isActiveLink(link.href) ? 'text-[#6FE7C8]' : 'text-[#3F7F6E] hover:text-foreground'}`}
+                className={`transition-colors font-medium relative ${
+                  isActiveLink(link.href) ? 'text-[#6FE7C8]' : 'text-[#3F7F6E] hover:text-foreground'
+                }`}
               >
                 {link.label}
                 {isAuthenticated && showBadge && (
-                  <span aria-label="Есть обновления" className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-[#6FE7C8]" />
+                  <span
+                    aria-label="Есть обновления"
+                    className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-[#6FE7C8]"
+                  />
                 )}
               </a>
             );
           })}
-
-          {/* Десктоп WeglotSwitcher после ссылок */}
-          <div className="ml-4">
-            <WeglotSwitcher />
-          </div>
-
           {isAuthenticated && learningCompleted && (
             <a
               href="#/learning"
-              className={`transition-colors font-medium relative ${isActiveLink('#/learning') ? 'text-[#6FE7C8]' : 'text-[#3F7F6E] hover:text-foreground'}`}
+              className={`transition-colors font-medium relative ${
+                isActiveLink('#/learning') ? 'text-[#6FE7C8]' : 'text-[#3F7F6E] hover:text-foreground'
+              }`}
             >
               Обучение
             </a>
           )}
         </div>
 
-        {/* Правая часть: RegionSelector и кнопки */}
+        {/* Weglot desktop */}
+        <div id="weglot-switcher" className="hidden lg:flex items-center mx-3">
+          <WeglotSwitcher />
+        </div>
+
+
         <div className="flex items-center gap-2">
           <RegionSelector />
           {isAuthenticated ? (
@@ -325,6 +352,7 @@ export default function NavBar() {
               </Button>
             </>
           )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -337,7 +365,6 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Мобильное меню */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
           <div className="px-4 py-3 space-y-1">
@@ -369,13 +396,15 @@ export default function NavBar() {
                     href="#/me"
                     className="px-3 py-2 text-sm font-medium text-[#3F7F6E] flex items-center gap-2 hover:bg-[#EFFFF8]/80 rounded-md"
                   >
-                    <User className="h-4 w-4 text-[#6FE7C8]" /> {user?.profile?.name}
+                    <User className="h-4 w-4 text-[#6FE7C8]" />
+                    {user?.profile?.name}
                   </a>
                   <button
                     onClick={logout}
                     className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50/80"
                   >
-                    <LogOut className="h-4 w-4 inline mr-2" /> {t('common.logout')}
+                    <LogOut className="h-4 w-4 inline mr-2" />
+                    {t('common.logout')}
                   </button>
                 </>
               ) : (
@@ -399,7 +428,6 @@ export default function NavBar() {
         </div>
       )}
 
-      {/* Баннер обучения */}
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
@@ -409,8 +437,12 @@ export default function NavBar() {
                   <GraduationCap className="h-5 w-5 text-blue-700" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-900">{t('learning.completeProfile')}</p>
-                  <p className="text-xs text-blue-700">{t('learning.subtitle')}</p>
+                  <p className="text-sm font-medium text-blue-900">
+                    {t('learning.completeProfile')}
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    {t('learning.subtitle')}
+                  </p>
                 </div>
               </div>
               <Button
