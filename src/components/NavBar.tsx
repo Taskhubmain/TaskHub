@@ -11,7 +11,7 @@ import RegionSelector from './RegionSelector';
 import WeglotSwitcher from './WeglotSwitcher';
 
 export default function NavBar() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const PUBLIC_LINKS = [
     { href: '#/market', label: t('nav.market') },
@@ -273,6 +273,11 @@ export default function NavBar() {
             TaskHub
           </a>
           <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">beta</Badge>
+
+          {/* Weglot-свитчер для мобилки */}
+          <div id="weglot-mobile" className="lg:hidden ml-3">
+            <WeglotSwitcher />
+          </div>
         </div>
 
         <div className="hidden lg:flex items-center gap-6 text-sm">
@@ -314,8 +319,11 @@ export default function NavBar() {
               Обучение
             </a>
           )}
-          {/* Weglot-свитчер на десктоп */}
-          <WeglotSwitcher />
+
+          {/* Weglot-свитчер для десктопа */}
+          <div className="ml-3">
+            <WeglotSwitcher />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -356,18 +364,9 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Weglot-свитчер для мобилки (в DOM сразу, скрыт) */}
-      <div id="weglot-mobile" className="lg:hidden px-4 py-2" style={{ display: 'none' }}>
-        <WeglotSwitcher />
-      </div>
-
+      {/* Мобильное меню */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
-          {/* показываем свитчер при открытом меню */}
-          <div className="px-4 py-2">
-            <WeglotSwitcher />
-          </div>
-
           <div className="px-4 py-3 space-y-1">
             {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
               const isMessages = link.href === '#/messages';
@@ -429,7 +428,7 @@ export default function NavBar() {
         </div>
       )}
 
-
+      {/* Блок обучения */}
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
