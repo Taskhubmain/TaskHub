@@ -8,7 +8,6 @@ import { useSupabaseKeepAlive } from '@/hooks/useSupabaseKeepAlive';
 import { queryWithRetry, subscribeWithMonitoring } from '@/lib/supabase-utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import RegionSelector from './RegionSelector';
-import WeglotSwitcher from './WeglotSwitcher';
 
 export default function NavBar() {
   const { t, language } = useTranslation();
@@ -274,10 +273,6 @@ export default function NavBar() {
             TaskHub
           </a>
           <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">beta</Badge>
-          {/* Weglot mobile */}
-          <div id="weglot-switcher" className="lg:hidden ml-2">
-            <WeglotSwitcher />
-          </div>
         </div>
 
         <div className="hidden lg:flex items-center gap-6 text-sm">
@@ -319,11 +314,6 @@ export default function NavBar() {
               Обучение
             </a>
           )}
-
-          {/* Weglot desktop */}
-          <div id="weglot-switcher" className="flex lg:flex items-center mx-3 opacity-0 lg:opacity-100 pointer-events-none lg:pointer-events-auto">
-            <WeglotSwitcher />
-          </div>
         </div>
 
         <div className="flex items-center gap-2">
