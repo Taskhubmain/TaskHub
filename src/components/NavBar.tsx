@@ -356,12 +356,18 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Weglot-свитчер на мобилке */}
+      {/* Weglot-свитчер для мобилки (в DOM сразу, скрыт) */}
+      <div id="weglot-mobile" className="lg:hidden px-4 py-2" style={{ display: 'none' }}>
+        <WeglotSwitcher />
+      </div>
+
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
+          {/* показываем свитчер при открытом меню */}
           <div className="px-4 py-2">
             <WeglotSwitcher />
           </div>
+
           <div className="px-4 py-3 space-y-1">
             {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
               const isMessages = link.href === '#/messages';
@@ -422,6 +428,7 @@ export default function NavBar() {
           </div>
         </div>
       )}
+
 
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
