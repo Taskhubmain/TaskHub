@@ -98,7 +98,6 @@ export default function NavBar() {
           .or(`client_id.eq.${user.id},freelancer_id.eq.${user.id}`)
           .gte('created_at', new Date(viewedDeals.timestamp).toISOString())
       );
-
       setHasNewDeals((dealsData?.length || 0) > 0);
     }
 
@@ -111,17 +110,10 @@ export default function NavBar() {
       setHasNewProposals(false);
     } else {
       const { data: ordersData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('orders')
-          .select('id')
-          .eq('user_id', user.id)
+        getSupabase().from('orders').select('id').eq('user_id', user.id)
       );
-
       const { data: tasksData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('tasks')
-          .select('id')
-          .eq('user_id', user.id)
+        getSupabase().from('tasks').select('id').eq('user_id', user.id)
       );
 
       const orderIds = ordersData?.map(o => o.id) || [];
@@ -135,7 +127,6 @@ export default function NavBar() {
             .or(`order_id.in.(${orderIds.join(',')}),task_id.in.(${taskIds.join(',')})`)
             .gte('created_at', new Date(viewedProposals.timestamp).toISOString())
         );
-
         setHasNewProposals((proposalsData?.length || 0) > 0);
       } else {
         setHasNewProposals(false);
@@ -147,26 +138,16 @@ export default function NavBar() {
 
     if (!viewedWallet) {
       const { data: profileData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .maybeSingle()
+        getSupabase().from('profiles').select('balance').eq('id', user.id).maybeSingle()
       );
-
       const currentBalance = profileData?.balance || 0;
       viewedWallet = { balance: currentBalance };
       localStorage.setItem(`viewed_wallet_${user.id}`, JSON.stringify(viewedWallet));
       setHasWalletUpdate(false);
     } else {
       const { data: profileData } = await queryWithRetry(() =>
-        getSupabase()
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .maybeSingle()
+        getSupabase().from('profiles').select('balance').eq('id', user.id).maybeSingle()
       );
-
       const currentBalance = profileData?.balance || 0;
       setHasWalletUpdate(currentBalance !== viewedWallet.balance);
     }
@@ -192,10 +173,10 @@ export default function NavBar() {
 
   useEffect(() => {
     if (!user) return;
-
     checkLearningStatus();
     computeHasUnread();
     computeNotifications();
+
     const interval = setInterval(() => {
       computeHasUnread();
       computeNotifications();
@@ -267,19 +248,16 @@ export default function NavBar() {
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-[#6FE7C8]/30 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/95">
       <div className="mx-auto max-w-7xl px-3 xs-375:px-4 sm:px-6 lg:px-8 h-14 xs-375:h-16 flex items-center justify-between">
+        {/* Логотип */}
         <div className="flex items-center gap-2 xs-375:gap-3">
           <Sparkles className="h-4 w-4 xs-375:h-5 xs-375:w-5 text-[#6FE7C8]" />
           <a href="#/" className="font-bold text-sm xs-375:text-base tracking-tight hover:text-[#6FE7C8] transition">
             TaskHub
           </a>
           <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">beta</Badge>
-
-          {/* Weglot-свитчер для мобилки */}
-          <div id="weglot-mobile" className="lg:hidden ml-3">
-            <WeglotSwitcher />
-          </div>
         </div>
 
+        {/* Десктоп: ссылки + Weglot + RegionSelector */}
         <div className="hidden lg:flex items-center gap-6 text-sm">
           {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
             const isMessages = link.href === '#/messages';
@@ -320,42 +298,22 @@ export default function NavBar() {
             </a>
           )}
 
-          {/* Weglot-свитчер для десктопа */}
+          {/* Weglot для десктопа */}
           <div className="ml-3">
             <WeglotSwitcher />
           </div>
+
+          {/* RegionSelector */}
+          <div className="ml-3">
+            <RegionSelector />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <RegionSelector />
-          {isAuthenticated ? (
-            <>
-              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-                <a href="#/me" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-[#6FE7C8]" />
-                  <span className="font-medium">{user?.profile?.name}</span>
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={logout} className="hidden sm:inline-flex">
-                <LogOut className="h-4 w-4 mr-2" />
-                {t('common.logout')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button asChild variant="ghost" className="hidden sm:inline-flex">
-                <a href="#/login">{t('common.login')}</a>
-              </Button>
-              <Button asChild className="hidden sm:inline-flex">
-                <a href="#/register">{t('common.register')}</a>
-              </Button>
-            </>
-          )}
-
+        {/* Мобильная кнопка меню */}
+        <div className="flex items-center gap-2 lg:hidden">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Меню"
           >
@@ -364,83 +322,38 @@ export default function NavBar() {
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Мобильное меню */}
+      {/* Мобильное раскрытое меню */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
-=======
-      {/* Weglot-свитчер на мобилке */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
-          <div className="px-4 py-2">
-            <WeglotSwitcher />
-          </div>
->>>>>>> parent of cd1ed9b (Update NavBar.tsx)
           <div className="px-4 py-3 space-y-1">
-            {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
-              const isMessages = link.href === '#/messages';
-              return (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
-                    isActiveLink(link.href)
-                      ? 'bg-[#EFFFF8]/80 backdrop-blur text-[#6FE7C8]'
-                      : 'text-[#3F7F6E] hover:bg-[#EFFFF8]/80 hover:text-foreground'
-                  }`}
-                >
-                  <span className="flex items-center justify-between">
-                    {link.label}
-                    {isAuthenticated && isMessages && hasUnread && (
-                      <span aria-hidden="true" className="ml-2 h-2 w-2 rounded-full bg-[#6FE7C8]" />
-                    )}
-                  </span>
-                </a>
-              );
-            })}
-            <div className="pt-3 space-y-2 border-t border-[#6FE7C8]/20">
-              {isAuthenticated ? (
-                <>
-                  <a
-                    href="#/me"
-                    className="px-3 py-2 text-sm font-medium text-[#3F7F6E] flex items-center gap-2 hover:bg-[#EFFFF8]/80 rounded-md"
-                  >
-                    <User className="h-4 w-4 text-[#6FE7C8]" />
-                    {user?.profile?.name}
-                  </a>
-                  <button
-                    onClick={logout}
-                    className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50/80"
-                  >
-                    <LogOut className="h-4 w-4 inline mr-2" />
-                    {t('common.logout')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <a
-                    href="#/login"
-                    className="block px-3 py-2 rounded-md text-sm font-medium text-[#3F7F6E] hover:bg-[#EFFFF8]/80 hover:text-foreground"
-                  >
-                    {t('common.login')}
-                  </a>
-                  <a
-                    href="#/register"
-                    className="block px-3 py-2 rounded-md text-sm font-medium bg-[#6FE7C8] text-white hover:bg-[#5DD6B7]"
-                  >
-                    {t('common.register')}
-                  </a>
-                </>
-              )}
+            {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                  isActiveLink(link.href)
+                    ? 'bg-[#EFFFF8]/80 backdrop-blur text-[#6FE7C8]'
+                    : 'text-[#3F7F6E] hover:bg-[#EFFFF8]/80 hover:text-foreground'
+                }`}
+              >
+                {link.label}
+              </a>
+            ))}
+
+            {/* Weglot для мобильного */}
+            <div className="px-3 py-2">
+              <WeglotSwitcher />
+            </div>
+
+            {/* RegionSelector для мобильного */}
+            <div className="px-3 py-2">
+              <RegionSelector />
             </div>
           </div>
         </div>
       )}
 
-<<<<<<< HEAD
       {/* Блок обучения */}
-=======
->>>>>>> parent of cd1ed9b (Update NavBar.tsx)
       {isAuthenticated && !learningCompleted && (
         <div className="bg-blue-500/10 backdrop-blur-xl border-b border-blue-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
