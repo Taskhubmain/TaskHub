@@ -321,7 +321,7 @@ export default function NavBar() {
           )}
 
           {typeof window !== 'undefined' && (
-            <div id="weglot-switcher1" className="lg:flex items-center mx-3">
+            <div id="weglot-switcher" className="lg:flex items-center mx-3">
               <WeglotSwitcher />
             </div>
           )}
