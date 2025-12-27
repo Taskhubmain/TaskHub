@@ -319,11 +319,12 @@ export default function NavBar() {
               Обучение
             </a>
           )}
-        </div>
 
-        {/* Weglot desktop */}
-        <div id="weglot-switcher" className="hidden lg:flex items-center mx-3">
-          <WeglotSwitcher />
+          {/* Weglot desktop */}
+          <div id="weglot-switcher" className="hidden lg:flex items-center mx-3">
+            <WeglotSwitcher />
+          </div>
+
         </div>
 
 
