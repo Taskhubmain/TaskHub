@@ -275,7 +275,7 @@ export default function NavBar() {
           </a>
           <Badge className="ml-1 xs-375:ml-2 text-xs" variant="secondary">beta</Badge>
           {/* Weglot mobile */}
-          <div id="weglot-switcher" className="lg:hidden ml-2">
+          <div className="lg:hidden ml-2">
             <WeglotSwitcher />
           </div>
         </div>
@@ -320,15 +320,11 @@ export default function NavBar() {
             </a>
           )}
 
-          {typeof window !== 'undefined' && (
-            <div id="weglot-switcher" className="lg:flex items-center mx-3">
-              <WeglotSwitcher />
-            </div>
-          )}
-
-
+          {/* Weglot desktop */}
+          <div className="lg:flex items-center mx-3">
+            <WeglotSwitcher />
+          </div>
         </div>
-
 
         <div className="flex items-center gap-2">
           <RegionSelector />
