@@ -8,11 +8,11 @@ import { useSupabaseKeepAlive } from '@/hooks/useSupabaseKeepAlive';
 import { queryWithRetry, subscribeWithMonitoring } from '@/lib/supabase-utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import RegionSelector from './RegionSelector';
+import WeglotSwitcher from './WeglotSwitcher';
 
 export default function NavBar() {
   const { t, language } = useTranslation();
 
-  // Links are recreated on every render when language changes
   const PUBLIC_LINKS = [
     { href: '#/market', label: t('nav.market') },
     { href: '#/learning', label: t('nav.learning') },
@@ -314,6 +314,8 @@ export default function NavBar() {
               Обучение
             </a>
           )}
+          {/* Weglot-свитчер на десктоп */}
+          <WeglotSwitcher />
         </div>
 
         <div className="flex items-center gap-2">
@@ -354,8 +356,12 @@ export default function NavBar() {
         </div>
       </div>
 
+      {/* Weglot-свитчер на мобилке */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-[#6FE7C8] bg-background/95 backdrop-blur-xl">
+          <div className="px-4 py-2">
+            <WeglotSwitcher />
+          </div>
           <div className="px-4 py-3 space-y-1">
             {(isAuthenticated ? PRIVATE_LINKS : PUBLIC_LINKS).map((link) => {
               const isMessages = link.href === '#/messages';
