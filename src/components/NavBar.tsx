@@ -320,10 +320,12 @@ export default function NavBar() {
             </a>
           )}
 
-          {/* Weglot desktop */}
-          <div id="weglot-switcher" className="ml-3">
-            <WeglotSwitcher />
-          </div>
+          {typeof window !== 'undefined' && (
+            <div id="weglot-switcher1" className="lg:flex items-center mx-3">
+              <WeglotSwitcher />
+            </div>
+          )}
+
 
         </div>
 
